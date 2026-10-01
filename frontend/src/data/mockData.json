@@ -1,0 +1,1123 @@
+{
+  "stats": {
+    "totalResumes": 2484,
+    "totalCandidates": 2484,
+    "shortlistedCandidates": 10,
+    "qualifiedCandidates": 44,
+    "averageAtsScore": 2.58,
+    "averageShortlistedAts": 34.33,
+    "highestAtsScore": 41.17,
+    "categoryDistribution": [
+      {
+        "category": "INFORMATION-TECHNOLOGY",
+        "count": 120
+      },
+      {
+        "category": "BUSINESS-DEVELOPMENT",
+        "count": 120
+      },
+      {
+        "category": "ENGINEERING",
+        "count": 118
+      },
+      {
+        "category": "ACCOUNTANT",
+        "count": 118
+      },
+      {
+        "category": "ADVOCATE",
+        "count": 118
+      },
+      {
+        "category": "FINANCE",
+        "count": 118
+      },
+      {
+        "category": "CHEF",
+        "count": 118
+      },
+      {
+        "category": "AVIATION",
+        "count": 117
+      },
+      {
+        "category": "FITNESS",
+        "count": 117
+      },
+      {
+        "category": "SALES",
+        "count": 116
+      },
+      {
+        "category": "CONSULTANT",
+        "count": 115
+      },
+      {
+        "category": "BANKING",
+        "count": 115
+      }
+    ],
+    "scoreDistribution": [
+      {
+        "range": ">= 40% (Strong)",
+        "count": 1
+      },
+      {
+        "range": "30 - 39% (Good)",
+        "count": 7
+      },
+      {
+        "range": "20 - 29% (Moderate)",
+        "count": 36
+      },
+      {
+        "range": "10 - 19% (Low)",
+        "count": 80
+      },
+      {
+        "range": "< 10% (Unmatched)",
+        "count": 2360
+      }
+    ],
+    "skillDistribution": [
+      {
+        "skill": "python",
+        "count": 40
+      },
+      {
+        "skill": "django",
+        "count": 0
+      },
+      {
+        "skill": "flask",
+        "count": 1
+      },
+      {
+        "skill": "sql",
+        "count": 191
+      },
+      {
+        "skill": "rest api",
+        "count": 6
+      },
+      {
+        "skill": "git",
+        "count": 330
+      },
+      {
+        "skill": "data structures",
+        "count": 4
+      },
+      {
+        "skill": "software development",
+        "count": 73
+      }
+    ],
+    "requiredSkills": [
+      "python",
+      "django",
+      "flask",
+      "sql",
+      "rest api",
+      "git",
+      "data structures",
+      "software development"
+    ]
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "id": "62994611",
+      "name": "Sarah Jenkins",
+      "email": "sarah.jenkins@example.com",
+      "category": "AGRICULTURE",
+      "similarity": 27.93,
+      "skillScore": 50.0,
+      "atsScore": 41.17,
+      "matchedSkills": [
+        "python",
+        "flask",
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Strong Match",
+      "appliedDate": "2026-09-28"
+    },
+    {
+      "rank": 2,
+      "id": "10624813",
+      "name": "Alex Rivera",
+      "email": "alex.rivera@example.com",
+      "category": "ENGINEERING",
+      "similarity": 19.38,
+      "skillScore": 50.0,
+      "atsScore": 37.75,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-27"
+    },
+    {
+      "rank": 3,
+      "id": "12144825",
+      "name": "David Chen",
+      "email": "david.chen@example.com",
+      "category": "AVIATION",
+      "similarity": 19.02,
+      "skillScore": 50.0,
+      "atsScore": 37.61,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-26"
+    },
+    {
+      "rank": 4,
+      "id": "43311839",
+      "name": "Emily Zhao",
+      "email": "emily.zhao@example.com",
+      "category": "CONSULTANT",
+      "similarity": 13.82,
+      "skillScore": 50.0,
+      "atsScore": 35.53,
+      "matchedSkills": [
+        "sql",
+        "rest api",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-25"
+    },
+    {
+      "rank": 5,
+      "id": "13405733",
+      "name": "Marcus Vance",
+      "email": "marcus.vance@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 12.0,
+      "skillScore": 50.0,
+      "atsScore": 34.8,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-24"
+    },
+    {
+      "rank": 6,
+      "id": "39441617",
+      "name": "Elena Rostova",
+      "email": "elena.rostova@example.com",
+      "category": "CONSULTANT",
+      "similarity": 8.82,
+      "skillScore": 50.0,
+      "atsScore": 33.53,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-23"
+    },
+    {
+      "rank": 7,
+      "id": "23464505",
+      "name": "Michael Chang",
+      "email": "michael.chang@example.com",
+      "category": "AVIATION",
+      "similarity": 8.39,
+      "skillScore": 50.0,
+      "atsScore": 33.36,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "data structures",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-22"
+    },
+    {
+      "rank": 8,
+      "id": "21156767",
+      "name": "Priya Sharma",
+      "email": "priya.sharma@example.com",
+      "category": "CONSULTANT",
+      "similarity": 21.32,
+      "skillScore": 37.5,
+      "atsScore": 31.03,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Good Match",
+      "appliedDate": "2026-09-21"
+    },
+    {
+      "rank": 9,
+      "id": "42156237",
+      "name": "Lucas Dubois",
+      "email": "lucas.dubois@example.com",
+      "category": "DIGITAL-MEDIA",
+      "similarity": 17.61,
+      "skillScore": 37.5,
+      "atsScore": 29.55,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-20"
+    },
+    {
+      "rank": 10,
+      "id": "27152464",
+      "name": "Jessica Miller",
+      "email": "jessica.miller@example.com",
+      "category": "ENGINEERING",
+      "similarity": 16.12,
+      "skillScore": 37.5,
+      "atsScore": 28.95,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-19"
+    },
+    {
+      "rank": 11,
+      "id": "35990852",
+      "name": "Amir Al-Mansoor",
+      "email": "amir.al-mansoor@example.com",
+      "category": "DESIGNER",
+      "similarity": 15.37,
+      "skillScore": 37.5,
+      "atsScore": 28.65,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-18"
+    },
+    {
+      "rank": 12,
+      "id": "16186411",
+      "name": "Rachel Greene",
+      "email": "rachel.greene@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 9.65,
+      "skillScore": 37.5,
+      "atsScore": 26.36,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-17"
+    },
+    {
+      "rank": 13,
+      "id": "21297521",
+      "name": "Carlos Mendez",
+      "email": "carlos.mendez@example.com",
+      "category": "BANKING",
+      "similarity": 9.42,
+      "skillScore": 37.5,
+      "atsScore": 26.27,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-16"
+    },
+    {
+      "rank": 14,
+      "id": "24643412",
+      "name": "Sophia Kowalski",
+      "email": "sophia.kowalski@example.com",
+      "category": "CONSULTANT",
+      "similarity": 9.4,
+      "skillScore": 37.5,
+      "atsScore": 26.26,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-15"
+    },
+    {
+      "rank": 15,
+      "id": "95429627",
+      "name": "Liam O'Connor",
+      "email": "liam.oconnor@example.com",
+      "category": "CONSULTANT",
+      "similarity": 9.29,
+      "skillScore": 37.5,
+      "atsScore": 26.22,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-14"
+    },
+    {
+      "rank": 16,
+      "id": "26746496",
+      "name": "Hanna Lindstrom",
+      "email": "hanna.lindstrom@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 8.45,
+      "skillScore": 37.5,
+      "atsScore": 25.88,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-13"
+    },
+    {
+      "rank": 17,
+      "id": "83816738",
+      "name": "Kevin Tanaka",
+      "email": "kevin.tanaka@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 7.65,
+      "skillScore": 37.5,
+      "atsScore": 25.56,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-12"
+    },
+    {
+      "rank": 18,
+      "id": "82246962",
+      "name": "Amina Diallo",
+      "email": "amina.diallo@example.com",
+      "category": "ENGINEERING",
+      "similarity": 7.1,
+      "skillScore": 37.5,
+      "atsScore": 25.34,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-11"
+    },
+    {
+      "rank": 19,
+      "id": "26456899",
+      "name": "James Wilson",
+      "email": "james.wilson@example.com",
+      "category": "ENGINEERING",
+      "similarity": 7.09,
+      "skillScore": 37.5,
+      "atsScore": 25.33,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-10"
+    },
+    {
+      "rank": 20,
+      "id": "41152404",
+      "name": "Olivia Martin",
+      "email": "olivia.martin@example.com",
+      "category": "BPO",
+      "similarity": 7.03,
+      "skillScore": 37.5,
+      "atsScore": 25.31,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-09"
+    },
+    {
+      "rank": 21,
+      "id": "51639418",
+      "name": "Daniel Kim",
+      "email": "daniel.kim@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 6.5,
+      "skillScore": 37.5,
+      "atsScore": 25.1,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-08"
+    },
+    {
+      "rank": 22,
+      "id": "50328713",
+      "name": "Chloe Bennett",
+      "email": "chloe.bennett@example.com",
+      "category": "ENGINEERING",
+      "similarity": 6.51,
+      "skillScore": 37.5,
+      "atsScore": 25.1,
+      "matchedSkills": [
+        "python",
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-07"
+    },
+    {
+      "rank": 23,
+      "id": "18442517",
+      "name": "Vikram Patel",
+      "email": "vikram.patel@example.com",
+      "category": "DIGITAL-MEDIA",
+      "similarity": 6.48,
+      "skillScore": 37.5,
+      "atsScore": 25.09,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-06"
+    },
+    {
+      "rank": 24,
+      "id": "34317538",
+      "name": "Isabella Santos",
+      "email": "isabella.santos@example.com",
+      "category": "DESIGNER",
+      "similarity": 5.3,
+      "skillScore": 37.5,
+      "atsScore": 24.62,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-05"
+    },
+    {
+      "rank": 25,
+      "id": "90867631",
+      "name": "Ryan Cooper",
+      "email": "ryan.cooper@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 4.65,
+      "skillScore": 37.5,
+      "atsScore": 24.36,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-04"
+    },
+    {
+      "rank": 26,
+      "id": "33381211",
+      "name": "Emma Watson",
+      "email": "emma.watson@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 4.33,
+      "skillScore": 37.5,
+      "atsScore": 24.23,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-28"
+    },
+    {
+      "rank": 27,
+      "id": "26341987",
+      "name": "Nathan Drake",
+      "email": "nathan.drake@example.com",
+      "category": "DIGITAL-MEDIA",
+      "similarity": 2.97,
+      "skillScore": 37.5,
+      "atsScore": 23.69,
+      "matchedSkills": [
+        "sql",
+        "git",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-27"
+    },
+    {
+      "rank": 28,
+      "id": "32985311",
+      "name": "Grace Hopper",
+      "email": "grace.hopper@example.com",
+      "category": "ENGINEERING",
+      "similarity": 19.95,
+      "skillScore": 25.0,
+      "atsScore": 22.98,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-26"
+    },
+    {
+      "rank": 29,
+      "id": "51588273",
+      "name": "Arthur Pendelton",
+      "email": "arthur.pendelton@example.com",
+      "category": "ENGINEERING",
+      "similarity": 19.01,
+      "skillScore": 25.0,
+      "atsScore": 22.61,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-25"
+    },
+    {
+      "rank": 30,
+      "id": "12011623",
+      "name": "Maya Lin",
+      "email": "maya.lin@example.com",
+      "category": "ENGINEERING",
+      "similarity": 17.67,
+      "skillScore": 25.0,
+      "atsScore": 22.07,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-24"
+    },
+    {
+      "rank": 31,
+      "id": "18448085",
+      "name": "Devon Archer",
+      "email": "devon.archer@example.com",
+      "category": "AUTOMOBILE",
+      "similarity": 17.52,
+      "skillScore": 25.0,
+      "atsScore": 22.01,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-23"
+    },
+    {
+      "rank": 32,
+      "id": "30863060",
+      "name": "Zoe Kravitz",
+      "email": "zoe.kravitz@example.com",
+      "category": "CONSULTANT",
+      "similarity": 16.82,
+      "skillScore": 25.0,
+      "atsScore": 21.73,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-22"
+    },
+    {
+      "rank": 33,
+      "id": "22946204",
+      "name": "Justin Trudeau",
+      "email": "justin.trudeau@example.com",
+      "category": "AUTOMOBILE",
+      "similarity": 15.98,
+      "skillScore": 25.0,
+      "atsScore": 21.39,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-21"
+    },
+    {
+      "rank": 34,
+      "id": "20674668",
+      "name": "Natalie Portman",
+      "email": "natalie.portman@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 15.9,
+      "skillScore": 25.0,
+      "atsScore": 21.36,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-20"
+    },
+    {
+      "rank": 35,
+      "id": "11813872",
+      "name": "Bruce Wayne",
+      "email": "bruce.wayne@example.com",
+      "category": "AGRICULTURE",
+      "similarity": 15.74,
+      "skillScore": 25.0,
+      "atsScore": 21.29,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-19"
+    },
+    {
+      "rank": 36,
+      "id": "28762662",
+      "name": "Diana Prince",
+      "email": "diana.prince@example.com",
+      "category": "ENGINEERING",
+      "similarity": 15.09,
+      "skillScore": 25.0,
+      "atsScore": 21.03,
+      "matchedSkills": [
+        "rest api",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-18"
+    },
+    {
+      "rank": 37,
+      "id": "13385306",
+      "name": "Peter Parker",
+      "email": "peter.parker@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 14.91,
+      "skillScore": 25.0,
+      "atsScore": 20.96,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-17"
+    },
+    {
+      "rank": 38,
+      "id": "22488036",
+      "name": "Tony Stark",
+      "email": "tony.stark@example.com",
+      "category": "FITNESS",
+      "similarity": 14.63,
+      "skillScore": 25.0,
+      "atsScore": 20.85,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-16"
+    },
+    {
+      "rank": 39,
+      "id": "36434348",
+      "name": "Clark Kent",
+      "email": "clark.kent@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 14.16,
+      "skillScore": 25.0,
+      "atsScore": 20.67,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-15"
+    },
+    {
+      "rank": 40,
+      "id": "14871762",
+      "name": "Barry Allen",
+      "email": "barry.allen@example.com",
+      "category": "BUSINESS-DEVELOPMENT",
+      "similarity": 14.0,
+      "skillScore": 25.0,
+      "atsScore": 20.6,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-14"
+    },
+    {
+      "rank": 41,
+      "id": "28790806",
+      "name": "Hal Jordan",
+      "email": "hal.jordan@example.com",
+      "category": "AUTOMOBILE",
+      "similarity": 13.8,
+      "skillScore": 25.0,
+      "atsScore": 20.52,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-13"
+    },
+    {
+      "rank": 42,
+      "id": "29524570",
+      "name": "Arthur Curry",
+      "email": "arthur.curry@example.com",
+      "category": "DESIGNER",
+      "similarity": 13.78,
+      "skillScore": 25.0,
+      "atsScore": 20.51,
+      "matchedSkills": [
+        "sql",
+        "git"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-12"
+    },
+    {
+      "rank": 43,
+      "id": "10265057",
+      "name": "Victor Stone",
+      "email": "victor.stone@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 13.19,
+      "skillScore": 25.0,
+      "atsScore": 20.27,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-11"
+    },
+    {
+      "rank": 44,
+      "id": "28630325",
+      "name": "Barbara Gordon",
+      "email": "barbara.gordon@example.com",
+      "category": "ENGINEERING",
+      "similarity": 12.89,
+      "skillScore": 25.0,
+      "atsScore": 20.16,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Moderate Match",
+      "appliedDate": "2026-09-10"
+    },
+    {
+      "rank": 45,
+      "id": "12635195",
+      "name": "Oliver Queen",
+      "email": "oliver.queen@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 12.48,
+      "skillScore": 25.0,
+      "atsScore": 19.99,
+      "matchedSkills": [
+        "python",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-09"
+    },
+    {
+      "rank": 46,
+      "id": "28126340",
+      "name": "John Stewart",
+      "email": "john.stewart@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 12.33,
+      "skillScore": 25.0,
+      "atsScore": 19.93,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-08"
+    },
+    {
+      "rank": 47,
+      "id": "29975124",
+      "name": "Dinah Lance",
+      "email": "dinah.lance@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 12.0,
+      "skillScore": 25.0,
+      "atsScore": 19.8,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-07"
+    },
+    {
+      "rank": 48,
+      "id": "13575312",
+      "name": "Jonn Jonzz",
+      "email": "jonn.jonzz@example.com",
+      "category": "HEALTHCARE",
+      "similarity": 11.91,
+      "skillScore": 25.0,
+      "atsScore": 19.77,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-06"
+    },
+    {
+      "rank": 49,
+      "id": "18067556",
+      "name": "Zatanna Zatara",
+      "email": "zatanna.zatara@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 11.5,
+      "skillScore": 25.0,
+      "atsScore": 19.6,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-05"
+    },
+    {
+      "rank": 50,
+      "id": "65062795",
+      "name": "Wally West",
+      "email": "wally.west@example.com",
+      "category": "CONSULTANT",
+      "similarity": 11.09,
+      "skillScore": 25.0,
+      "atsScore": 19.44,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-04"
+    },
+    {
+      "rank": 51,
+      "id": "54227873",
+      "name": "Roy Harper",
+      "email": "roy.harper@example.com",
+      "category": "ENGINEERING",
+      "similarity": 11.08,
+      "skillScore": 25.0,
+      "atsScore": 19.43,
+      "matchedSkills": [
+        "python",
+        "data structures"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-28"
+    },
+    {
+      "rank": 52,
+      "id": "70089206",
+      "name": "Dick Grayson",
+      "email": "dick.grayson@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 11.02,
+      "skillScore": 25.0,
+      "atsScore": 19.41,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-27"
+    },
+    {
+      "rank": 53,
+      "id": "98348532",
+      "name": "Jason Todd",
+      "email": "jason.todd@example.com",
+      "category": "BANKING",
+      "similarity": 10.61,
+      "skillScore": 25.0,
+      "atsScore": 19.24,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-26"
+    },
+    {
+      "rank": 54,
+      "id": "22351830",
+      "name": "Tim Drake",
+      "email": "tim.drake@example.com",
+      "category": "CONSULTANT",
+      "similarity": 10.54,
+      "skillScore": 25.0,
+      "atsScore": 19.22,
+      "matchedSkills": [
+        "sql",
+        "git"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-25"
+    },
+    {
+      "rank": 55,
+      "id": "17823436",
+      "name": "Stephanie Brown",
+      "email": "stephanie.brown@example.com",
+      "category": "BANKING",
+      "similarity": 10.51,
+      "skillScore": 25.0,
+      "atsScore": 19.2,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-24"
+    },
+    {
+      "rank": 56,
+      "id": "18187364",
+      "name": "Cassandra Cain",
+      "email": "cassandra.cain@example.com",
+      "category": "INFORMATION-TECHNOLOGY",
+      "similarity": 10.03,
+      "skillScore": 25.0,
+      "atsScore": 19.01,
+      "matchedSkills": [
+        "sql",
+        "software development"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-23"
+    },
+    {
+      "rank": 57,
+      "id": "25397102",
+      "name": "Damian Wayne",
+      "email": "damian.wayne@example.com",
+      "category": "BUSINESS-DEVELOPMENT",
+      "similarity": 9.85,
+      "skillScore": 25.0,
+      "atsScore": 18.94,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-22"
+    },
+    {
+      "rank": 58,
+      "id": "12415691",
+      "name": "Alfred Pennyworth",
+      "email": "alfred.pennyworth@example.com",
+      "category": "DESIGNER",
+      "similarity": 9.58,
+      "skillScore": 25.0,
+      "atsScore": 18.83,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-21"
+    },
+    {
+      "rank": 59,
+      "id": "22232367",
+      "name": "Lucius Fox",
+      "email": "lucius.fox@example.com",
+      "category": "AVIATION",
+      "similarity": 8.76,
+      "skillScore": 25.0,
+      "atsScore": 18.5,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-20"
+    },
+    {
+      "rank": 60,
+      "id": "34953092",
+      "name": "Jim Gordon",
+      "email": "jim.gordon@example.com",
+      "category": "BANKING",
+      "similarity": 8.35,
+      "skillScore": 25.0,
+      "atsScore": 18.34,
+      "matchedSkills": [
+        "python",
+        "sql"
+      ],
+      "recommendation": "Low Match",
+      "appliedDate": "2026-09-19"
+    }
+  ]
+}

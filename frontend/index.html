@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'><rect width='32' height='32' rx='8' fill='%23070B14'/><path d='M9 8h8a6 6 0 0 1 6 6c0 2.8-1.9 5.1-4.5 5.8L23 24h-4l-4.2-4H13v4H9V8zm4 3.5v5h4a2.5 2.5 0 0 0 0-5h-4z' fill='%234FD1FF'/><circle cx='24' cy='8' r='3' fill='%238B5CF6'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="HireNova — Next-Gen Recruitment. Automated resume parsing, candidate scoring, skill matching, and recruiter workflows." />
+    <title>HireNova — Next-Gen Recruitment</title>
+    <!-- Professional Typography: Inter (Primary UI font) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Prevent Flash of Unstyled Content (FOUC) and respect system theme -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('hirenova_theme') || localStorage.getItem('airecruitx_theme') || localStorage.getItem('reqretx_theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved ? saved : (prefersDark ? 'dark' : 'light');
+          var root = document.documentElement;
+          if (theme === 'light') {
+            root.classList.remove('dark');
+            root.classList.add('light');
+            root.setAttribute('data-theme', 'light');
+          } else {
+            root.classList.remove('light');
+            root.classList.add('dark');
+            root.setAttribute('data-theme', 'dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[#070B14] text-[#F8FAFC] antialiased selection:bg-[#8B5CF6] selection:text-white font-sans overflow-x-hidden transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

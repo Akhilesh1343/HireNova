@@ -1,0 +1,147 @@
+/**
+ * 10 Realistic, Production-Grade Job Templates for HireNova
+ * Used during Job Creation & Quick Screening intake
+ */
+
+export const JOB_TEMPLATES = [
+  {
+    id: 'tpl-software-engineer',
+    title: 'Software Engineer',
+    department: 'Engineering',
+    location: 'Remote / Hybrid',
+    type: 'Full-Time',
+    description: 'We are looking for a Software Engineer to design, build, and maintain core services and client-facing applications. You will collaborate with cross-functional teams to deliver reliable software using modern programming languages, test automation, and CI/CD pipelines.',
+    requiredSkills: ['Python', 'Java', 'Data Structures', 'Algorithms', 'SQL', 'Git'],
+    preferredSkills: ['Docker', 'AWS', 'REST API', 'Unit Testing', 'Linux'],
+    minExperience: 2,
+    maxExperience: 5,
+    minSalary: 75000,
+    maxSalary: 120000
+  },
+  {
+    id: 'tpl-frontend-developer',
+    title: 'Frontend Developer',
+    department: 'Engineering',
+    location: 'Remote / New York',
+    type: 'Full-Time',
+    description: 'Seeking a skilled Frontend Developer proficient in modern JavaScript/TypeScript and React to create responsive, accessible, and fast web user interfaces. You will work closely with product designers to implement clean component design systems.',
+    requiredSkills: ['React', 'JavaScript', 'TypeScript', 'HTML5', 'CSS3', 'Git'],
+    preferredSkills: ['Tailwind CSS', 'Next.js', 'Redux', 'Webpack', 'Figma', 'Jest'],
+    minExperience: 2,
+    maxExperience: 5,
+    minSalary: 70000,
+    maxSalary: 115000
+  },
+  {
+    id: 'tpl-backend-developer',
+    title: 'Backend Developer',
+    department: 'Engineering',
+    location: 'Remote / San Francisco',
+    type: 'Full-Time',
+    description: 'Looking for a Backend Developer to architect, scale, and optimize RESTful microservices and data pipelines. The role requires strong knowledge of server-side frameworks, relational databases, query performance, and distributed systems.',
+    requiredSkills: ['Python', 'Django', 'Flask', 'PostgreSQL', 'SQL', 'REST API', 'Git'],
+    preferredSkills: ['Redis', 'Docker', 'FastAPI', 'Celery', 'Kafka', 'AWS'],
+    minExperience: 3,
+    maxExperience: 6,
+    minSalary: 85000,
+    maxSalary: 135000
+  },
+  {
+    id: 'tpl-fullstack-developer',
+    title: 'Full Stack Developer',
+    department: 'Engineering',
+    location: 'Remote / Austin',
+    type: 'Full-Time',
+    description: 'We are seeking an experienced Full Stack Developer comfortable working across both client interfaces (React) and backend services (Node.js/Python). You will take ownership of end-to-end features from database schemas to polished UI components.',
+    requiredSkills: ['React', 'Python', 'Node.js', 'SQL', 'REST API', 'Git', 'JavaScript'],
+    preferredSkills: ['TypeScript', 'Docker', 'PostgreSQL', 'MongoDB', 'GraphQL', 'AWS'],
+    minExperience: 3,
+    maxExperience: 7,
+    minSalary: 85000,
+    maxSalary: 140000
+  },
+  {
+    id: 'tpl-data-scientist',
+    title: 'Data Scientist',
+    department: 'Data & Analytics',
+    location: 'Remote / Boston',
+    type: 'Full-Time',
+    description: 'Join our team as a Data Scientist to extract actionable insights from complex datasets, formulate statistical models, and build predictive algorithms. You will translate ambiguous business questions into measurable analytical experiments.',
+    requiredSkills: ['Python', 'R', 'SQL', 'Pandas', 'NumPy', 'Scikit-Learn', 'Statistics'],
+    preferredSkills: ['Machine Learning', 'Data Visualization', 'Tableau', 'Matplotlib', 'Jupyter', 'BigQuery'],
+    minExperience: 2,
+    maxExperience: 6,
+    minSalary: 90000,
+    maxSalary: 145000
+  },
+  {
+    id: 'tpl-data-analyst',
+    title: 'Data Analyst',
+    department: 'Data & Analytics',
+    location: 'Remote / Chicago',
+    type: 'Full-Time',
+    description: 'Seeking a Data Analyst to build executive dashboards, interpret business trends, and maintain analytics tracking. You will write complex SQL queries, validate data integrity, and communicate insights to operational stakeholders.',
+    requiredSkills: ['SQL', 'Excel', 'Tableau', 'Power BI', 'Python', 'Data Analysis'],
+    preferredSkills: ['Statistics', 'PostgreSQL', 'Looker', 'ETL', 'Communication'],
+    minExperience: 1,
+    maxExperience: 4,
+    minSalary: 60000,
+    maxSalary: 95000
+  },
+  {
+    id: 'tpl-ml-engineer',
+    title: 'Machine Learning Engineer',
+    department: 'AI Research',
+    location: 'Remote / Seattle',
+    type: 'Full-Time',
+    description: 'We are looking for an ML Engineer to design, train, and deploy production machine learning pipelines and NLP models. You will bridge the gap between experimental data science prototypes and resilient cloud inference services.',
+    requiredSkills: ['Python', 'Machine Learning', 'Deep Learning', 'PyTorch', 'TensorFlow', 'Scikit-Learn', 'NLP'],
+    preferredSkills: ['Docker', 'MLOps', 'Kubernetes', 'HuggingFace', 'FastAPI', 'Cloud Deployment'],
+    minExperience: 3,
+    maxExperience: 7,
+    minSalary: 105000,
+    maxSalary: 165000
+  },
+  {
+    id: 'tpl-devops-engineer',
+    title: 'DevOps Engineer',
+    department: 'Infrastructure',
+    location: 'Remote / Denver',
+    type: 'Full-Time',
+    description: 'Looking for a DevOps Engineer to manage cloud infrastructure, automate deployment pipelines, and guarantee high availability. You will implement Infrastructure-as-Code and monitor system reliability across environments.',
+    requiredSkills: ['Docker', 'Kubernetes', 'Linux', 'AWS', 'CI/CD', 'Git', 'Bash'],
+    preferredSkills: ['Terraform', 'Ansible', 'Prometheus', 'Grafana', 'Python', 'Security Best Practices'],
+    minExperience: 3,
+    maxExperience: 6,
+    minSalary: 95000,
+    maxSalary: 150000
+  },
+  {
+    id: 'tpl-uiux-designer',
+    title: 'UI/UX Designer',
+    department: 'Product Design',
+    location: 'Remote / Los Angeles',
+    type: 'Full-Time',
+    description: 'Seeking an empathetic UI/UX Designer to conduct user research, produce high-fidelity wireframes, and establish consistent design system components. You will champion user-centered design across all web and mobile touchpoints.',
+    requiredSkills: ['Figma', 'UI Design', 'UX Research', 'Wireframing', 'Prototyping', 'Design Systems'],
+    preferredSkills: ['User Testing', 'HTML/CSS Awareness', 'Micro-interactions', 'Adobe Creative Cloud', 'Accessibility (WCAG)'],
+    minExperience: 2,
+    maxExperience: 5,
+    minSalary: 70000,
+    maxSalary: 110000
+  },
+  {
+    id: 'tpl-cybersecurity-analyst',
+    title: 'Cybersecurity Analyst',
+    department: 'Security & Compliance',
+    location: 'Remote / Washington, DC',
+    type: 'Full-Time',
+    description: 'We are seeking a Cybersecurity Analyst to monitor security events, conduct vulnerability assessments, and protect corporate systems against intrusions. You will participate in incident response and ensure compliance with industry frameworks.',
+    requiredSkills: ['Network Security', 'Vulnerability Assessment', 'SIEM', 'Firewalls', 'Incident Response', 'Linux'],
+    preferredSkills: ['Wireshark', 'Python Scripting', 'ISO 27001', 'SOC 2', 'Penetration Testing', 'Cloud Security'],
+    minExperience: 2,
+    maxExperience: 6,
+    minSalary: 85000,
+    maxSalary: 135000
+  }
+];

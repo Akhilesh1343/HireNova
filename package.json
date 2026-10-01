@@ -1,0 +1,13 @@
+{
+  "name": "ai-resume-screening-system",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI Resume Screening & Candidate Shortlisting System",
+  "scripts": {
+    "dev": "node frontend/node_modules/vite/bin/vite.js frontend",
+    "build": "node frontend/node_modules/vite/bin/vite.js build frontend",
+    "preview": "node frontend/node_modules/vite/bin/vite.js preview frontend",
+    "install:frontend": "npm --prefix frontend install --ignore-scripts"
+  }
+}

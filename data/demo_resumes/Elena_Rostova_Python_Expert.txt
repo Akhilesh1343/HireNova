@@ -1,0 +1,31 @@
+ELENA ROSTOVA
+Senior Backend Software Engineer | Python & Distributed Systems
+Email: elena.rostova@example.com | Phone: +1 (555) 234-5678 | GitHub: github.com/elena-rostova
+
+PROFESSIONAL SUMMARY
+Experienced Software Development Engineer with 7+ years architecting scalable REST APIs, microservices, and high-throughput data processing systems. Expert in Python, Django, Flask, SQL, and database performance tuning. Proven track record leading Git workflows and implementing robust data structures.
+
+TECHNICAL SKILLS
+- Languages: Python, SQL, C++, Bash
+- Frameworks & Libraries: Django, Flask, FastAPI, Celery, SQLAlchemy
+- Architecture: REST API design, Microservices, Data Structures & Algorithms
+- Databases: PostgreSQL, MySQL, Redis
+- Tools: Git, Docker, Kubernetes, AWS, Linux, CI/CD pipelines
+- Methodology: Agile, Software Development Life Cycle (SDLC)
+
+PROFESSIONAL EXPERIENCE
+Senior Python Engineer | CloudScale Tech (2022 - Present)
+- Designed and built high-performance REST APIs using Python and Django serving 12M+ monthly active requests.
+- Streamlined relational database queries in PostgreSQL/SQL reducing query execution latency by 45%.
+- Implemented asynchronous background job queues using Flask and Celery.
+- Maintained enterprise Git branching policies, automated code reviews, and enforced rigorous unit testing.
+- Optimized core caching algorithms and custom data structures for distributed caching.
+
+Software Development Engineer | FinTech Systems (2018 - 2022)
+- Built financial reconciliation services using Python and SQL.
+- Designed secure public and internal REST APIs adhering to OAuth2 standards.
+- Collaborated across cross-functional teams in software development sprints.
+
+EDUCATION
+Bachelor of Science in Computer Science & Engineering (2014 - 2018)
+Core coursework: Advanced Data Structures, Algorithms, Database Systems.
