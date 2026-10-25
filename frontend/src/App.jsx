@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AuthModal from './components/auth/AuthModal';
-import Sidebar from './components/layout/Sidebar';
-import Header from './components/layout/Header';
+import TopNavbar from './components/layout/TopNavbar';
 import Dashboard from './pages/Dashboard';
 import ResumeScreening from './pages/ResumeScreening';
 import ScreeningHistory from './pages/ScreeningHistory';
@@ -57,8 +56,6 @@ function AppContent() {
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
   const [latestAnalysisResult, setLatestAnalysisResult] = useState(null);
   const [selectedJobForScreening, setSelectedJobForScreening] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Set browser title to exactly "HireNova — Next-Gen Recruitment"
   useEffect(() => {
@@ -125,68 +122,30 @@ function AppContent() {
 
   // Render operational recruiter application workspace
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#070B14] text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-200">
-      {/* Desktop Navigation Rail */}
-      <div className="hidden md:flex shrink-0 relative z-20">
-        <Sidebar
-          currentTab={currentTab}
-          setCurrentTab={(tab) => {
-            handleTabChange(tab);
-            setMobileSidebarOpen(false);
-          }}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-        />
-      </div>
-
-      {/* Mobile Drawer Backdrop & Sidebar */}
-      {mobileSidebarOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-[#070B14]/80 backdrop-blur-sm md:hidden"
-          onClick={() => setMobileSidebarOpen(false)}
-        >
-          <div
-            className="w-64 h-full bg-[#0A0E1A] shadow-2xl border-r border-slate-800"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Sidebar
-              currentTab={currentTab}
-              setCurrentTab={(tab) => {
-                handleTabChange(tab);
-                setMobileSidebarOpen(false);
-              }}
-              isCollapsed={false}
-              setIsCollapsed={() => setMobileSidebarOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+    <div className="min-h-screen flex flex-col bg-[#F4F3FA] dark:bg-[#070A13] text-[#1C1739] dark:text-slate-100 font-sans transition-colors duration-200 overflow-x-hidden w-full">
+      {/* Top Horizontal Navigation Bar (Reference Image 1: Peoplexio Layout) */}
+      <TopNavbar
+        currentTab={currentTab}
+        setCurrentTab={handleTabChange}
+      />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative z-10">
-        {/* Top Header */}
-        <Header
-          currentTab={currentTab}
-          setCurrentTab={handleTabChange}
-          toggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-        />
-
-        {/* Dynamic Page Views with Strict RBAC Authorization */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-transparent">
-          <div key={currentTab} className="max-w-7xl mx-auto animate-page-enter">
-            {!isAuthorized ? (
-              <AccessRestricted
-                currentRole={user?.role}
-                onBackToDashboard={() => handleTabChange('dashboard')}
-              />
-            ) : (
-              <>
-                {currentTab === 'dashboard' && (
-                  <Dashboard
-                    setCurrentTab={handleTabChange}
-                    setSelectedCandidateId={handleSelectCandidate}
-                  />
-                )}
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] w-full mx-auto">
+        <div key={currentTab} className="animate-page-enter">
+          {!isAuthorized ? (
+            <AccessRestricted
+              currentRole={user?.role}
+              onBackToDashboard={() => handleTabChange('dashboard')}
+            />
+          ) : (
+            <>
+              {currentTab === 'dashboard' && (
+                <Dashboard
+                  setCurrentTab={handleTabChange}
+                  setSelectedCandidateId={handleSelectCandidate}
+                  setSelectedJobForScreening={setSelectedJobForScreening}
+                />
+              )}
 
                 {currentTab === 'jobs' && (
                   <JobManagement
@@ -261,7 +220,6 @@ function AppContent() {
             )}
           </div>
         </main>
-      </div>
 
       {/* Global Recruiter Authentication Modal */}
       <AuthModal onLoginSuccess={() => handleTabChange('dashboard')} />

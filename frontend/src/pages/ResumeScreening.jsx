@@ -12,7 +12,6 @@ import {
   AlertCircle,
   X,
   RotateCcw,
-  Sparkles,
   Info,
   CheckCircle2,
   Eye

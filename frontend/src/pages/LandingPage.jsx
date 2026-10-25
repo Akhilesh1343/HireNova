@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   ChevronRight,
   ExternalLink,
-  Sparkles,
   Database,
   ArrowUpRight,
   Lock,
@@ -37,10 +36,13 @@ export default function LandingPage({ onLaunchApp, onOpenAuth }) {
       <header className="relative z-30 border-b border-navy-700/60 bg-navy-950/80 backdrop-blur-md sticky top-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Wordmark */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/10 p-1 flex items-center justify-center shadow-sm shrink-0">
+              <img src="/assets/hirenova-logo.png" alt="HireNova Logo" className="w-full h-full object-contain" draggable={false} />
+            </div>
             <span className="font-display font-extrabold text-xl tracking-tight text-white flex items-center gap-1.5">
               HireNova
-              <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block shadow-[0_0_8px_#818CF8]" />
+              <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block shadow-[0_0_8px_#38BDF8]" />
             </span>
             <span className="hidden md:inline-block text-[11px] font-mono uppercase tracking-widest text-navy-400 border-l border-navy-700 pl-3">
               Next-Gen Recruitment

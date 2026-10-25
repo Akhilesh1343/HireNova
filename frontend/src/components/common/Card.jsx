@@ -6,17 +6,17 @@ import React from 'react';
  */
 export function Card({ children, className = '', header, title, subtitle, action, footer, noPadding = false }) {
   return (
-    <div className={`bg-navy-900 border border-navy-800 rounded-xl shadow-card-dark ${className}`}>
+    <div className={`bg-white dark:bg-[#0E1526]/85 border border-[#EAE7F4] dark:border-white/[0.08] rounded-2xl shadow-sm backdrop-blur-md transition-all ${className}`}>
       {(header || title) && (
-        <div className="px-5 py-3.5 border-b border-navy-800 flex items-center justify-between gap-4 bg-navy-900/60">
+        <div className="px-5 py-3.5 border-b border-[#F0EDF8] dark:border-white/[0.06] flex items-center justify-between gap-4">
           <div className="min-w-0">
             {title && (
-              <h3 className="font-display font-bold text-white text-sm tracking-tight truncate">
+              <h3 className="font-display font-bold text-[#1C1739] dark:text-white text-sm tracking-tight truncate">
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="text-xs text-navy-400 mt-0.5 tracking-tight truncate font-sans">
+              <p className="text-xs text-[#736B92] dark:text-slate-400 mt-0.5 tracking-tight truncate font-sans">
                 {subtitle}
               </p>
             )}
@@ -26,7 +26,7 @@ export function Card({ children, className = '', header, title, subtitle, action
       )}
       <div className={noPadding ? '' : 'p-5'}>{children}</div>
       {footer && (
-        <div className="px-5 py-3 bg-navy-950 border-t border-navy-800 rounded-b-xl text-xs text-navy-400">
+        <div className="px-5 py-3 bg-[#F8F7FD] dark:bg-[#070A13] border-t border-[#F0EDF8] dark:border-white/[0.06] rounded-b-2xl text-xs text-[#736B92] dark:text-slate-400">
           {footer}
         </div>
       )}
@@ -39,20 +39,20 @@ export function Card({ children, className = '', header, title, subtitle, action
  */
 export function StatCard({ title, value, change, icon: Icon, color, subtext, className = '' }) {
   return (
-    <div className={`bg-navy-900 border border-navy-800 rounded-xl p-4 shadow-card-dark flex flex-col justify-between ${className}`}>
+    <div className={`bg-white dark:bg-[#0E1526]/85 border border-[#EAE7F4] dark:border-white/[0.08] rounded-2xl p-4 shadow-sm backdrop-blur-md flex flex-col justify-between ${className}`}>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-mono uppercase tracking-wider text-navy-400">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#736B92] dark:text-slate-400">
           {title}
         </span>
-        {Icon && <Icon className="w-3.5 h-3.5 text-navy-500 shrink-0" />}
+        {Icon && <Icon className="w-4 h-4 text-[#5B47E0] dark:text-[#A78BFA] shrink-0" />}
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-display font-extrabold text-white tracking-tight tabular-nums">
+        <span className="text-2xl font-display font-extrabold text-[#1C1739] dark:text-white tracking-tight tabular-nums">
           {value}
         </span>
       </div>
       {(subtext || change) && (
-        <div className="mt-1 text-[11px] text-navy-400 font-sans tracking-tight">
+        <div className="mt-1 text-[11px] text-[#736B92] dark:text-slate-400 font-sans tracking-tight">
           {subtext || change}
         </div>
       )}

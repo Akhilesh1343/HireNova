@@ -14,7 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  Sparkles,
   LogOut,
   History
 } from 'lucide-react';
@@ -59,9 +58,9 @@ export default function Sidebar({ currentTab, setCurrentTab, isCollapsed, setIsC
             className="flex items-center gap-2.5 cursor-pointer group"
             onClick={() => setCurrentTab('dashboard')}
           >
-            {/* Custom Brand Mark */}
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:bg-indigo-500 transition-colors shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+            {/* Official Brand Mark */}
+            <div className="w-8 h-8 rounded-lg bg-slate-900/5 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/[0.08] p-1 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform shrink-0">
+              <img src="/assets/hirenova-logo.png" alt="HireNova Logo" className="w-full h-full object-contain" draggable={false} />
             </div>
             <div className="flex flex-col leading-tight min-w-0">
               <span className="font-semibold text-sm tracking-tight text-slate-900 dark:text-white truncate">
@@ -78,8 +77,8 @@ export default function Sidebar({ currentTab, setCurrentTab, isCollapsed, setIsC
             onClick={() => setCurrentTab('dashboard')}
             title="HireNova — Next-Gen Recruitment"
           >
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-slate-900/5 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/[0.08] p-1 flex items-center justify-center shadow-xs hover:scale-105 transition-transform">
+              <img src="/assets/hirenova-logo.png" alt="HireNova Logo" className="w-full h-full object-contain" draggable={false} />
             </div>
           </div>
         )}

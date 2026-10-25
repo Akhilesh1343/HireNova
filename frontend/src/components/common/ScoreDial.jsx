@@ -42,7 +42,8 @@ export default function ScoreDial({ score, size = 120, strokeWidth = 5, label = 
             cx={size / 2}
             cy={size / 2}
             r={radius}
-            stroke="#1A2642"
+            stroke="currentColor"
+            className="text-slate-200 dark:text-[#1A2642]"
             strokeWidth={strokeWidth}
             fill="transparent"
           />
@@ -64,10 +65,10 @@ export default function ScoreDial({ score, size = 120, strokeWidth = 5, label = 
 
         {/* Central Metric Value */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className={`text-2xl font-display font-bold tracking-tight ${scoreClass} tabular-nums leading-none`}>
+          <span className={`text-2xl font-display font-bold tracking-tight text-[#1C1739] dark:text-white tabular-nums leading-none`}>
             <AnimatedNumber value={Math.round(normalizedScore)} duration={400} />%
           </span>
-          <span className="text-[9px] font-mono uppercase tracking-wider text-navy-400 mt-1">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500 dark:text-navy-400 mt-1">
             {label}
           </span>
         </div>
