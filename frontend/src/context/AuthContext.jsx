@@ -4,6 +4,7 @@ import {
   registerApi,
   forgotPasswordApi,
   resetPasswordApi,
+  verifyResetTokenApi,
   getMeApi,
   clearAuthToken,
   getAuthToken
@@ -37,14 +38,21 @@ export function AuthProvider({ children }) {
         const path = window.location.pathname.toLowerCase();
         const hash = window.location.hash.toLowerCase().replace('#', '').trim();
         const params = new URLSearchParams(window.location.search);
-        const tokenParam = params.get('token');
+        let tokenParam = params.get('token') || params.get('reset_token');
+        if (!tokenParam && window.location.hash.includes('token=')) {
+          const hashQuery = window.location.hash.split('?')[1];
+          if (hashQuery) {
+            const hashParams = new URLSearchParams(hashQuery);
+            tokenParam = hashParams.get('token') || hashParams.get('reset_token');
+          }
+        }
 
-        if (path === '/forgot-password' || params.get('mode') === 'forgot-password' || hash === 'forgot-password') {
-          setAuthView('forgot-password');
-          setIsAuthModalOpen(true);
-        } else if (path === '/reset-password' || params.get('mode') === 'reset-password' || hash === 'reset-password' || tokenParam) {
+        if (tokenParam || path === '/reset-password' || params.get('mode') === 'reset-password' || hash.startsWith('reset-password')) {
           if (tokenParam) setResetToken(tokenParam);
           setAuthView('reset-password');
+          setIsAuthModalOpen(true);
+        } else if (path === '/forgot-password' || params.get('mode') === 'forgot-password' || hash === 'forgot-password') {
+          setAuthView('forgot-password');
           setIsAuthModalOpen(true);
         } else if (path === '/register' || path === '/signup' || params.get('mode') === 'register' || params.get('mode') === 'signup' || hash === 'register' || hash === 'signup') {
           setAuthView('register');
@@ -155,6 +163,7 @@ export function AuthProvider({ children }) {
         register,
         forgotPassword,
         resetPassword,
+        verifyResetToken: verifyResetTokenApi,
         logout,
         updateUserProfile,
         isAuthModalOpen,

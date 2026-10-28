@@ -33,6 +33,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { hasPermission, formatRole } from '../../utils/rbac';
 import { getHealthStatusApi, getScreeningHistoryApi } from '../../services/api';
 import BrandLogo from '../common/BrandLogo';
+import ThemeSelector from '../common/ThemeSelector';
 
 export default function TopNavbar({ currentTab, setCurrentTab }) {
   const { user, isAuthenticated, openAuthModal, logout } = useAuth();
@@ -268,7 +269,14 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
   const notificationCount = (isHealthy ? 2 : 1) + (recentAlerts.length > 0 ? 1 : 0);
 
   return (
-    <header className="sticky top-0 z-40 w-full transition-all duration-200 bg-[#050807]/90 backdrop-blur-xl border-b border-emerald-500/10 text-[#F8FAFC]">
+    <header
+      className="sticky top-0 z-40 w-full transition-all duration-200 theme-navbar backdrop-blur-xl border-b shadow-xs"
+      style={{
+        backgroundColor: 'var(--theme-navbar-bg)',
+        borderColor: 'var(--border-subtle)',
+        color: 'var(--text-primary)'
+      }}
+    >
       <div className="w-full max-w-[1760px] mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3 lg:gap-4 min-w-0">
         
         {/* =========================================================================
@@ -287,7 +295,10 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
               className="w-full h-full"
             />
             <div className="flex flex-col justify-center leading-tight">
-              <span className="font-bold text-base sm:text-lg tracking-tight text-[#F8FAFC] flex items-center font-display whitespace-nowrap">
+              <span
+                className="font-bold text-base sm:text-lg tracking-tight flex items-center font-display whitespace-nowrap"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 HireNova
               </span>
             </div>
@@ -298,7 +309,13 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
             CENTER: HORIZONTAL NAVIGATION BAR (COMPACT DESKTOP PILL)
             ========================================================================= */}
         <nav className="hidden lg:flex items-center justify-center flex-1 min-w-0 px-1 sm:px-2">
-          <div className="flex items-center gap-0.5 xl:gap-1 p-1 rounded-full bg-[#0B1210]/90 border border-emerald-500/15 shadow-sm backdrop-blur-md">
+          <div
+            className="flex items-center gap-0.5 xl:gap-1 p-1 rounded-full border shadow-xs backdrop-blur-md"
+            style={{
+              backgroundColor: 'var(--bg-elevated)',
+              borderColor: 'var(--border-subtle)',
+            }}
+          >
             
             {/* Core Visible Tabs: Dashboard, Jobs, Candidates, Screen Resumes, Shortlist */}
             {visiblePrimary.map((item) => {
@@ -307,10 +324,15 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
                 <button
                   key={item.id}
                   onClick={() => handleTabClick(item.id)}
+                  style={{
+                    backgroundColor: isActive ? 'var(--accent-primary)' : 'transparent',
+                    color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                    borderColor: isActive ? 'var(--accent-bright)' : 'transparent',
+                  }}
                   className={`relative px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-tight transition-all duration-200 select-none whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#059669] text-white shadow-sm shadow-emerald-700/30 font-semibold border border-emerald-400/30'
-                      : 'text-[#94A3A8] hover:text-[#F8FAFC] hover:bg-[#131F1B]'
+                      ? 'shadow-sm font-semibold border'
+                      : 'hover:opacity-100 hover:bg-[var(--bg-hover)]'
                   }`}
                 >
                   {item.label}
@@ -326,10 +348,15 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
                 aria-haspopup="true"
                 aria-expanded={showMoreMenu}
                 aria-controls="more-dropdown-menu"
+                style={{
+                  backgroundColor: isMoreActive ? 'var(--accent-primary)' : 'transparent',
+                  color: isMoreActive ? '#FFFFFF' : 'var(--text-secondary)',
+                  borderColor: isMoreActive ? 'var(--accent-bright)' : 'transparent',
+                }}
                 className={`relative px-2.5 xl:px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-tight flex items-center gap-1 transition-all duration-200 select-none whitespace-nowrap ${
                   isMoreActive
-                    ? 'bg-[#059669] text-white shadow-sm shadow-emerald-700/30 font-semibold border border-emerald-400/30'
-                    : 'text-[#94A3A8] hover:text-[#F8FAFC] hover:bg-[#131F1B]'
+                    ? 'shadow-sm font-semibold border'
+                    : 'hover:opacity-100 hover:bg-[var(--bg-hover)]'
                 }`}
                 title="More recruitment views & options"
               >
@@ -352,7 +379,12 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
           <div className="relative" ref={searchRef}>
             <button
               onClick={() => setShowSearchPopover(!showSearchPopover)}
-              className="p-1.5 xs:p-2 rounded-full bg-[#0B1210] text-[#94A3A8] hover:text-[#34D399] border border-emerald-500/15 hover:bg-[#131F1B] transition-all shrink-0"
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                color: 'var(--text-secondary)',
+                borderColor: 'var(--border-subtle)',
+              }}
+              className="p-1.5 xs:p-2 rounded-full border hover:opacity-100 transition-all shrink-0"
               title="Search candidates or jobs"
               aria-label="Search"
             >
@@ -361,16 +393,30 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
 
             {/* Search popover - responsive positioning so it never overflows */}
             {showSearchPopover && (
-              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-72 max-w-[calc(100vw-24px)] bg-[#0B1210] border border-emerald-500/20 rounded-2xl shadow-2xl p-2.5 z-50 animate-dropdown text-[#F8FAFC]">
+              <div
+                className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 w-auto sm:w-72 max-w-[calc(100vw-24px)] rounded-2xl shadow-2xl p-2.5 z-50 animate-dropdown theme-dropdown"
+                style={{
+                  backgroundColor: 'var(--theme-dropdown-bg)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  boxShadow: 'var(--card-shadow)',
+                }}
+              >
                 <form onSubmit={handleSearchSubmit} className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3A8]" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search candidate, role, skill..."
                     autoFocus
-                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl bg-[#050807] border border-emerald-500/20 text-[#F8FAFC] placeholder:text-[#94A3A8]/60 focus:outline-none focus:border-[#34D399]"
+                    className="w-full pl-8 pr-3 py-2 text-xs rounded-xl focus:outline-none transition-colors"
+                    style={{
+                      backgroundColor: 'var(--bg-elevated)',
+                      borderColor: 'var(--border-subtle)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
                   />
                 </form>
               </div>
@@ -381,29 +427,53 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
           <div className="relative" ref={notificationsRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-1.5 xs:p-2 rounded-full bg-[#0B1210] text-[#94A3A8] hover:text-[#34D399] border border-emerald-500/15 hover:bg-[#131F1B] transition-all shrink-0"
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                color: 'var(--text-secondary)',
+                borderColor: 'var(--border-subtle)',
+              }}
+              className="relative p-1.5 xs:p-2 rounded-full border hover:opacity-100 transition-all shrink-0"
               title="System Alerts & Notifications"
               aria-label="Notifications"
             >
               <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {/* Dynamic notification count */}
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-[#059669] text-white font-bold text-[8px] sm:text-[9px] flex items-center justify-center shadow-sm">
+              <span
+                className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-white font-bold text-[8px] sm:text-[9px] flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: 'var(--accent-primary)' }}
+              >
                 {notificationCount}
               </span>
             </button>
 
             {showNotifications && (
-              <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-3 w-auto sm:w-80 max-w-[calc(100vw-24px)] bg-[#0B1210] border border-emerald-500/20 rounded-2xl shadow-2xl p-3.5 sm:p-4 z-50 animate-dropdown text-xs backdrop-blur-2xl max-h-[80vh] overflow-y-auto text-[#F8FAFC]">
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.08] font-semibold text-[#F8FAFC]">
+              <div
+                className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-3 w-auto sm:w-80 max-w-[calc(100vw-24px)] rounded-2xl shadow-2xl p-3.5 sm:p-4 z-50 animate-dropdown text-xs backdrop-blur-2xl max-h-[80vh] overflow-y-auto theme-dropdown"
+                style={{
+                  backgroundColor: 'var(--theme-dropdown-bg)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                  boxShadow: 'var(--card-shadow)',
+                }}
+              >
+                <div className="flex items-center justify-between pb-3 border-b font-semibold" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}>
                   <div className="flex items-center gap-2">
                     <span className="font-bold">System Status</span>
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                      style={{
+                        backgroundColor: 'var(--accent-subtle)',
+                        color: 'var(--accent-text)',
+                        borderColor: 'var(--border-subtle)',
+                      }}
+                    >
                       {isHealthy ? 'All Systems Online' : 'System Degraded'}
                     </span>
                   </div>
                   <button
                     onClick={() => setShowNotifications(false)}
-                    className="text-[#94A3A8] hover:text-white text-[11px]"
+                    className="hover:opacity-100 text-[11px]"
+                    style={{ color: 'var(--text-muted)' }}
                   >
                     Close
                   </button>
@@ -478,19 +548,8 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
             )}
           </div>
 
-          {/* Theme Toggle (Sun/Moon Pill) */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 xs:p-2 rounded-full bg-[#0B1210] text-[#94A3A8] hover:text-[#34D399] border border-emerald-500/15 hover:bg-[#131F1B] transition-all shrink-0"
-            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 transition-transform duration-200 hover:rotate-45" />
-            ) : (
-              <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#34D399] transition-transform duration-200 hover:-rotate-12" />
-            )}
-          </button>
+          {/* Theme Selector (5 Complete Themes with Palette Icon) */}
+          <ThemeSelector variant="compact" align="right" />
 
           {/* Screen Resumes Action Button - Visible on md+ for authorized roles or guest prompt */}
           {currentTab !== 'screening' && (!isAuthenticated || hasPermission(user?.role, 'screening')) && (
@@ -503,7 +562,12 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
                 setCurrentTab('screening');
                 setShowMoreMenu(false);
               }}
-              className="hidden md:inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-full shadow-md shadow-emerald-700/25 border border-emerald-400/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shrink-0"
+              style={{
+                backgroundColor: 'var(--accent-primary)',
+                borderColor: 'var(--border-subtle)',
+                color: '#FFFFFF',
+              }}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-bold rounded-full shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] hover:opacity-95 shrink-0 border"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Screen Resumes</span>
@@ -515,7 +579,12 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
             <div className="relative shrink-0 hidden md:block" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1 pr-1.5 sm:pr-2.5 rounded-full bg-[#0B1210] border border-emerald-500/15 hover:bg-[#131F1B] transition-all text-xs"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                }}
+                className="flex items-center gap-2 p-1 pr-1.5 sm:pr-2.5 rounded-full border hover:opacity-95 transition-all text-xs"
                 title="Account Menu"
                 aria-expanded={showUserMenu}
               >
@@ -542,20 +611,35 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-3 w-64 max-w-[calc(100vw-24px)] bg-[#0B1210] border border-emerald-500/20 rounded-2xl shadow-2xl p-2.5 z-50 animate-dropdown text-xs backdrop-blur-2xl text-[#F8FAFC]">
-                  <div className="p-2.5 border-b border-white/[0.08] mb-1">
-                    <div className="font-bold text-[#F8FAFC] text-sm truncate">
+                <div
+                  className="absolute right-0 mt-3 w-64 max-w-[calc(100vw-24px)] rounded-2xl shadow-2xl p-2.5 z-50 animate-dropdown text-xs backdrop-blur-2xl theme-dropdown"
+                  style={{
+                    backgroundColor: 'var(--theme-dropdown-bg)',
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-primary)',
+                    boxShadow: 'var(--card-shadow)',
+                  }}
+                >
+                  <div className="p-2.5 border-b mb-1" style={{ borderColor: 'var(--border-subtle)' }}>
+                    <div className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
                       {user?.full_name || 'User'}
                     </div>
-                    <div className="text-[11px] text-[#94A3A8] truncate mt-0.5">
+                    <div className="text-[11px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       {user?.email || 'user@hirenova.ai'}
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-950/40 text-[#34D399] text-[10px] font-bold border border-emerald-500/25">
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                        style={{
+                          backgroundColor: 'var(--accent-subtle)',
+                          color: 'var(--accent-text)',
+                          borderColor: 'var(--border-subtle)',
+                        }}
+                      >
                         {formatRole(user?.role)}
                       </span>
                       {user?.company_name && (
-                        <span className="text-[10px] text-[#94A3A8] truncate font-medium">
+                        <span className="text-[10px] truncate font-medium" style={{ color: 'var(--text-secondary)' }}>
                           {user.company_name}
                         </span>
                       )}
@@ -567,9 +651,10 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
                       handleTabClick('settings');
                       setShowUserMenu(false);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[#94A3A8] hover:text-white hover:bg-[#131F1B] text-left transition-colors font-medium"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-colors font-medium hover:opacity-100"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
-                    <SettingsIcon className="w-3.5 h-3.5 text-[#34D399]" />
+                    <SettingsIcon className="w-3.5 h-3.5" style={{ color: 'var(--accent-bright)' }} />
                     <span>Account Settings</span>
                   </button>
 
@@ -590,7 +675,12 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
             <div className="hidden sm:flex items-center gap-2 shrink-0">
               <button
                 onClick={() => openAuthModal('login')}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold text-[#94A3A8] hover:text-[#34D399] bg-[#0B1210] border border-emerald-500/20 hover:bg-[#131F1B] rounded-full transition-all shadow-sm"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)',
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold border rounded-full transition-all shadow-sm hover:opacity-95"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Sign In</span>
@@ -618,11 +708,24 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
           no horizontal overflow or clipping. Always respects dark emerald theme.
           ========================================================================= */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-emerald-500/20 bg-[#0B1210] text-[#F8FAFC] backdrop-blur-2xl p-4 space-y-4 animate-dropdown shadow-2xl max-h-[calc(100vh-4.5rem)] overflow-y-auto overscroll-contain mobile-nav-drawer">
+        <div
+          className="lg:hidden border-t theme-dropdown p-4 space-y-4 animate-dropdown shadow-2xl max-h-[calc(100vh-4.5rem)] overflow-y-auto overscroll-contain mobile-nav-drawer"
+          style={{
+            backgroundColor: 'var(--theme-dropdown-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
           
           {/* User Account Bar in Mobile Drawer */}
           {isAuthenticated ? (
-            <div className="p-3 rounded-2xl bg-[#131F1B] border border-emerald-500/20 flex items-center justify-between gap-3">
+            <div
+              className="p-3 rounded-2xl border flex items-center justify-between gap-3"
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                borderColor: 'var(--border-subtle)'
+              }}
+            >
               <div className="flex items-center gap-2.5 min-w-0">
                 {user?.avatar_url ? (
                   <img
@@ -769,13 +872,7 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
               </span>
             </div>
 
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 font-bold text-[#34D399] px-2.5 py-1.5 rounded-lg hover:bg-[#131F1B] transition-colors"
-            >
-              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
-              <span>{isDark ? 'Light' : 'Dark'}</span>
-            </button>
+            <ThemeSelector variant="compact" align="right" />
           </div>
         </div>
       )}
@@ -797,8 +894,11 @@ export default function TopNavbar({ currentTab, setCurrentTab }) {
             left: `${moreMenuPosition.left}px`,
             width: `${moreMenuPosition.width}px`,
             transformOrigin: moreMenuPosition.placement === 'top' ? 'bottom center' : 'top center',
+            backgroundColor: 'var(--theme-dropdown-bg)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)'
           }}
-          className="z-[9999] rounded-2xl bg-[#0B1210] border border-emerald-500/20 shadow-2xl p-1.5 animate-dropdown backdrop-blur-2xl max-h-[calc(100vh-100px)] overflow-y-auto text-[#F8FAFC]"
+          className="z-[9999] rounded-2xl theme-dropdown shadow-2xl p-1.5 animate-dropdown backdrop-blur-2xl max-h-[calc(100vh-100px)] overflow-y-auto"
         >
           {/* Secondary recruitment views */}
           {visibleSecondary.length > 0 && (

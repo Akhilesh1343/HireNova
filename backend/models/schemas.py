@@ -26,11 +26,16 @@ class ForgotPasswordRequest(BaseModel):
 class ForgotPasswordResponse(BaseModel):
     message: str
     status: str = "success"
-    reset_token: Optional[str] = None  # Facilitates local development verification without external SMTP
+
+
+class VerifyResetTokenResponse(BaseModel):
+    valid: bool
+    email: Optional[str] = None
+    message: Optional[str] = None
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str = Field(..., description="Signed password reset token")
+    token: str = Field(..., description="Password reset token")
     new_password: str = Field(..., min_length=8, description="New password (minimum 8 characters)")
     confirm_password: Optional[str] = None
 
@@ -38,6 +43,25 @@ class ResetPasswordRequest(BaseModel):
 class ResetPasswordResponse(BaseModel):
     message: str
     status: str = "success"
+
+
+class OAuthConfigResponse(BaseModel):
+    google_enabled: bool
+    apple_enabled: bool
+
+
+class OAuthUrlResponse(BaseModel):
+    provider: str
+    auth_url: str
+
+
+class OAuthLoginRequest(BaseModel):
+    provider: str
+    code: Optional[str] = None
+    credential: Optional[str] = None
+    id_token: Optional[str] = None
+    redirect_uri: Optional[str] = None
+
 
 
 class UserResponse(BaseModel):

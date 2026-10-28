@@ -32,7 +32,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, THEMES } from '../context/ThemeContext';
 import { normalizeRole, formatRole, ROLES } from '../utils/rbac';
 import {
   updateProfileApi,
@@ -314,14 +314,15 @@ export default function SettingsPage({ onNavigateTab }) {
     if (targetTheme) {
       setTheme(targetTheme);
     }
-    const chosenTheme = targetTheme || (isDark ? 'dark' : 'light');
+    const chosenTheme = targetTheme || theme;
     try {
       localStorage.setItem('hirenova_display_density', displayDensity);
       const updated = await updatePreferencesApi({
         theme_preference: chosenTheme
       });
       updateUserProfile(updated);
-      showFeedbackMessage('success', `Theme switched to ${chosenTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}!`);
+      const themeName = THEMES.find(t => t.id === chosenTheme)?.name || chosenTheme;
+      showFeedbackMessage('success', `Theme switched to ${themeName}!`);
     } catch (err) {
       // Local theme toggle already works
       showFeedbackMessage('success', `Theme preference updated.`);
@@ -1053,50 +1054,56 @@ export default function SettingsPage({ onNavigateTab }) {
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
               Color Theme
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-              {/* Dark Theme Card */}
-              <button
-                type="button"
-                onClick={() => handleSaveAppearance('dark')}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  isDark
-                    ? 'border-indigo-500 bg-[#080B14] text-white ring-1 ring-indigo-500/50 shadow-sm'
-                    : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-950 text-indigo-400 flex items-center justify-center border border-indigo-800/50">
-                    <Moon className="w-4 h-4" />
-                  </div>
-                  {isDark && <Check className="w-4 h-4 text-indigo-400" />}
-                </div>
-                <div className="font-semibold text-xs text-slate-900 dark:text-white">Dark Theme</div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Deep navy &amp; near-black surface. Reduced eye strain for high-focus screening.
-                </p>
-              </button>
-
-              {/* Light Theme Card */}
-              <button
-                type="button"
-                onClick={() => handleSaveAppearance('light')}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  !isDark
-                    ? 'border-indigo-500 bg-white text-slate-900 ring-1 ring-indigo-500/50 shadow-sm'
-                    : 'border-slate-800 bg-[#080B14] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
-                    <Sun className="w-4 h-4" />
-                  </div>
-                  {!isDark && <Check className="w-4 h-4 text-indigo-600" />}
-                </div>
-                <div className="font-semibold text-xs text-slate-900 dark:text-white">Light Theme</div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Crisp daylight workspace with WCAG high-contrast clarity.
-                </p>
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 max-w-2xl">
+              {THEMES.map((t) => {
+                const isSelected = theme === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => handleSaveAppearance(t.id)}
+                    className={`p-3.5 rounded-xl border text-left transition-all ${
+                      isSelected
+                        ? 'ring-2 shadow-sm font-semibold'
+                        : 'opacity-85 hover:opacity-100 hover:border-slate-400'
+                    }`}
+                    style={{
+                      backgroundColor: 'var(--bg-elevated)',
+                      borderColor: isSelected ? t.accentColor : 'var(--border-subtle)',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center p-0.5 border"
+                        style={{
+                          backgroundColor: t.surfaceColor,
+                          borderColor: t.borderColor,
+                        }}
+                      >
+                        <div
+                          className="w-3.5 h-3.5 rounded-full"
+                          style={{ backgroundColor: t.accentColor }}
+                        />
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4" style={{ color: t.accentColor }} />
+                      )}
+                    </div>
+                    <div className="font-bold text-xs" style={{ color: 'var(--text-primary)' }}>
+                      {t.name}
+                      {t.id === 'emerald' && (
+                        <span className="ml-1.5 text-[9px] uppercase px-1 py-0.2 rounded font-extrabold bg-emerald-500/20 text-emerald-400">
+                          Brand
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] mt-0.5 leading-tight" style={{ color: 'var(--text-muted)' }}>
+                      {t.tagline}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

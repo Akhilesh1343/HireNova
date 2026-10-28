@@ -19,6 +19,38 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getOAuthUrlApi } from '../../services/api';
+
+function GoogleIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
+function AppleIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.99.6-2.64 1.36-.57.66-1.07 1.72-.94 2.75 1.01.08 2.04-.51 2.66-1.26z" />
+    </svg>
+  );
+}
 
 const ROLES = [
   {
@@ -72,7 +104,8 @@ export default function AuthModal({ onLoginSuccess }) {
     login,
     register,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    verifyResetToken
   } = useAuth();
 
   // Active view: 'login' | 'register' | 'forgot-password' | 'reset-password'
@@ -98,14 +131,21 @@ export default function AuthModal({ onLoginSuccess }) {
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
-  const [devResetToken, setDevResetToken] = useState('');
 
-  // Reset password state
+  // Reset password state & token verification
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [resetCompletedSuccess, setResetCompletedSuccess] = useState(false);
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  const [tokenVerified, setTokenVerified] = useState(false);
+  const [tokenError, setTokenError] = useState('');
+  const [tokenEmail, setTokenEmail] = useState('');
+
+  // Social OAuth state
+  const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
+  const [oauthNotice, setOauthNotice] = useState(null);
 
   // Shared status state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,6 +158,7 @@ export default function AuthModal({ onLoginSuccess }) {
       setCurrentView(authView);
       setErrorMessage('');
       setSuccessMessage('');
+      setOauthNotice(null);
     }
   }, [authView]);
 
@@ -139,6 +180,47 @@ export default function AuthModal({ onLoginSuccess }) {
     }
   }, [isAuthModalOpen, prefilledEmail, resetToken]);
 
+  // Token verification effect for reset-password view
+  useEffect(() => {
+    if (currentView === 'reset-password' && isAuthModalOpen) {
+      if (!resetToken) {
+        setTokenError('Password reset token is missing. Please use the secure link sent to your email.');
+        setTokenVerified(false);
+        return;
+      }
+
+      let isMounted = true;
+      setIsVerifyingToken(true);
+      setTokenError('');
+
+      if (verifyResetToken) {
+        verifyResetToken(resetToken)
+          .then((res) => {
+            if (isMounted) {
+              setTokenVerified(true);
+              setTokenEmail(res?.email || '');
+              setTokenError('');
+            }
+          })
+          .catch((err) => {
+            if (isMounted) {
+              setTokenVerified(false);
+              setTokenError(err.message || 'This password reset link is invalid or has expired. Please request a new one.');
+            }
+          })
+          .finally(() => {
+            if (isMounted) {
+              setIsVerifyingToken(false);
+            }
+          });
+      }
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [currentView, isAuthModalOpen, resetToken, verifyResetToken]);
+
   if (!isAuthModalOpen) return null;
 
   const handleClose = () => {
@@ -155,11 +237,41 @@ export default function AuthModal({ onLoginSuccess }) {
   const switchView = (newView) => {
     setErrorMessage('');
     setSuccessMessage('');
+    setOauthNotice(null);
     setAccountCreatedSuccess(false);
     setForgotSubmitted(false);
     setResetCompletedSuccess(false);
+    setTokenError('');
     setCurrentView(newView);
     setAuthView(newView);
+  };
+
+  // -------------------------------------------------------------
+  // SOCIAL OAUTH HANDLER (Google & Apple)
+  // -------------------------------------------------------------
+  const handleSocialAuth = async (provider) => {
+    setErrorMessage('');
+    setSuccessMessage('');
+    setOauthNotice(null);
+    setSocialLoading(provider);
+
+    try {
+      const res = await getOAuthUrlApi(provider);
+      if (res && res.auth_url) {
+        window.location.href = res.auth_url;
+      }
+    } catch (err) {
+      const providerName = provider === 'google' ? 'Google' : 'Apple';
+      const configVars = provider === 'google'
+        ? 'GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET'
+        : 'APPLE_CLIENT_ID and APPLE_TEAM_ID';
+      setOauthNotice({
+        provider: providerName,
+        message: err.message || `${providerName} Sign-In is not configured yet. To enable real ${providerName} authentication, configure ${configVars} in backend/.env.`
+      });
+    } finally {
+      setSocialLoading(null);
+    }
   };
 
   // -------------------------------------------------------------
@@ -169,6 +281,7 @@ export default function AuthModal({ onLoginSuccess }) {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setOauthNotice(null);
 
     const cleanEmail = loginEmail.trim();
     if (!cleanEmail) {
@@ -205,6 +318,7 @@ export default function AuthModal({ onLoginSuccess }) {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setOauthNotice(null);
 
     const cleanName = regFullName.trim();
     const cleanEmail = regEmail.trim();
@@ -259,6 +373,7 @@ export default function AuthModal({ onLoginSuccess }) {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setOauthNotice(null);
 
     const cleanEmail = forgotEmail.trim();
     if (!cleanEmail) {
@@ -272,12 +387,8 @@ export default function AuthModal({ onLoginSuccess }) {
 
     setIsSubmitting(true);
     try {
-      const res = await forgotPassword(cleanEmail);
+      await forgotPassword(cleanEmail);
       setForgotSubmitted(true);
-      if (res && res.reset_token) {
-        setDevResetToken(res.reset_token);
-        setResetToken(res.reset_token);
-      }
     } catch (err) {
       setErrorMessage(err.message || 'Could not process password reset request.');
     } finally {
@@ -292,11 +403,10 @@ export default function AuthModal({ onLoginSuccess }) {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
+    setOauthNotice(null);
 
-    const tokenToUse = resetToken || devResetToken;
-
-    if (!tokenToUse) {
-      setErrorMessage('Password reset token is missing. Please request a new reset link.');
+    if (!resetToken) {
+      setErrorMessage('Password reset token is missing. Please use the secure link sent to your email.');
       return;
     }
     if (newPassword.length < 8) {
@@ -311,13 +421,24 @@ export default function AuthModal({ onLoginSuccess }) {
     setIsSubmitting(true);
     try {
       await resetPassword({
-        token: tokenToUse,
+        token: resetToken,
         new_password: newPassword,
         confirm_password: confirmNewPassword
       });
 
       setResetCompletedSuccess(true);
       setLoginPassword('');
+
+      // Clean up reset token parameter from browser URL without page reload
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        url.searchParams.delete('reset_token');
+        const cleanHash = window.location.hash.includes('reset') ? '' : window.location.hash;
+        window.history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + cleanHash);
+      } catch {
+        // Ignore history replace state errors
+      }
     } catch (err) {
       setErrorMessage(err.message || 'Could not reset password. The link or token may have expired.');
     } finally {
@@ -546,6 +667,19 @@ export default function AuthModal({ onLoginSuccess }) {
               </div>
             )}
 
+            {/* OAuth Notice Banner */}
+            {oauthNotice && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-950/40 border border-amber-600/50 text-amber-200 text-xs flex items-start gap-2.5 animate-toast">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <span className="font-semibold block text-amber-300 mb-0.5">
+                    {oauthNotice.provider} Authentication Setup Required
+                  </span>
+                  <span>{oauthNotice.message}</span>
+                </div>
+              </div>
+            )}
+
             {/* ============================================================ */}
             {/* VIEW 1: LOGIN                                                */}
             {/* ============================================================ */}
@@ -649,8 +783,52 @@ export default function AuthModal({ onLoginSuccess }) {
                   </button>
                 </form>
 
+                {/* Social Auth Section: Google & Apple */}
+                <div className="mt-4 space-y-3">
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-emerald-500/15" />
+                    </div>
+                    <div className="relative px-3 bg-[#0B1210] text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+                      OR CONTINUE WITH
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSocialAuth('google')}
+                      disabled={socialLoading !== null || isSubmitting}
+                      className="w-full py-2.5 px-3 rounded-xl bg-[#131F1B] hover:bg-[#182A24] border border-emerald-500/20 hover:border-emerald-500/40 text-xs font-medium text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-[0.99]"
+                      aria-label="Continue with Google"
+                    >
+                      {socialLoading === 'google' ? (
+                        <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <GoogleIcon className="w-4 h-4 shrink-0" />
+                      )}
+                      <span className="truncate">Continue with Google</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSocialAuth('apple')}
+                      disabled={socialLoading !== null || isSubmitting}
+                      className="w-full py-2.5 px-3 rounded-xl bg-[#131F1B] hover:bg-[#182A24] border border-emerald-500/20 hover:border-emerald-500/40 text-xs font-medium text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-[0.99]"
+                      aria-label="Continue with Apple"
+                    >
+                      {socialLoading === 'apple' ? (
+                        <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <AppleIcon className="w-4 h-4 shrink-0" />
+                      )}
+                      <span className="truncate">Continue with Apple</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Divider & Switch to Register */}
-                <div className="mt-6 pt-4 border-t border-emerald-500/15 text-center text-xs text-slate-400">
+                <div className="mt-5 pt-3.5 border-t border-emerald-500/15 text-center text-xs text-slate-400">
                   New to HireNova?{' '}
                   <button
                     type="button"
@@ -882,6 +1060,50 @@ export default function AuthModal({ onLoginSuccess }) {
                       </button>
                     </form>
 
+                    {/* Social Auth Section: Google & Apple */}
+                    <div className="mt-3.5 space-y-2.5">
+                      <div className="relative flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-emerald-500/15" />
+                        </div>
+                        <div className="relative px-3 bg-[#0B1210] text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+                          OR CONTINUE WITH
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleSocialAuth('google')}
+                          disabled={socialLoading !== null || isSubmitting}
+                          className="w-full py-2 px-3 rounded-xl bg-[#131F1B] hover:bg-[#182A24] border border-emerald-500/20 hover:border-emerald-500/40 text-xs font-medium text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-[0.99]"
+                          aria-label="Continue with Google"
+                        >
+                          {socialLoading === 'google' ? (
+                            <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <GoogleIcon className="w-4 h-4 shrink-0" />
+                          )}
+                          <span className="truncate">Continue with Google</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSocialAuth('apple')}
+                          disabled={socialLoading !== null || isSubmitting}
+                          className="w-full py-2 px-3 rounded-xl bg-[#131F1B] hover:bg-[#182A24] border border-emerald-500/20 hover:border-emerald-500/40 text-xs font-medium text-slate-200 hover:text-white transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 active:scale-[0.99]"
+                          aria-label="Continue with Apple"
+                        >
+                          {socialLoading === 'apple' ? (
+                            <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <AppleIcon className="w-4 h-4 shrink-0" />
+                          )}
+                          <span className="truncate">Continue with Apple</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Back to sign in */}
                     <div className="mt-4 pt-3 border-t border-emerald-500/15 text-center text-xs text-slate-400">
                       Already have an account?{' '}
@@ -914,48 +1136,28 @@ export default function AuthModal({ onLoginSuccess }) {
 
                 {forgotSubmitted ? (
                   <div className="py-4 space-y-4 animate-toast">
-                    <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 text-xs">
+                    <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 text-xs space-y-2">
                       <div className="flex items-start gap-2.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                         <div>
-                          <div className="font-semibold">Reset instructions dispatched</div>
-                          <p className="mt-1 text-emerald-300/90 leading-relaxed">
-                            If an account exists for <span className="font-medium text-white">{forgotEmail}</span>, instructions to reset your password have been processed. Please check your inbox and spam folder.
+                          <div className="font-semibold text-sm text-emerald-200">Reset instructions dispatched</div>
+                          <p className="mt-1 text-emerald-300/90 leading-relaxed text-xs">
+                            If an account exists for <span className="font-medium text-white">{forgotEmail}</span>, instructions to reset your password have been processed.
+                          </p>
+                          <p className="mt-2 text-slate-300 text-[11px] leading-relaxed">
+                            Please check your email inbox and click the secure password reset link. The link expires in 20 minutes and can only be used once.
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Development Environment Token Verification */}
-                    {devResetToken && (
-                      <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/70 text-xs text-slate-300">
-                        <div className="flex items-center gap-1.5 font-medium text-emerald-300 mb-1">
-                          <ShieldCheck className="w-3.5 h-3.5 text-[#34D399]" />
-                          <span>Development Environment Verification</span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-snug">
-                          Local SMTP is not configured. A development reset token has been verified:
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResetToken(devResetToken);
-                            switchView('reset-password');
-                          }}
-                          className="mt-2.5 w-full py-2 px-3 text-xs font-semibold text-white bg-[#059669] hover:bg-[#047857] rounded-lg shadow-sm inline-flex items-center justify-center gap-1"
-                        >
-                          <span>Proceed to Reset Password</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-
                     <button
                       type="button"
                       onClick={() => switchView('login')}
-                      className="w-full py-2.5 px-4 text-xs font-medium text-slate-300 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl border border-white/[0.08]"
+                      className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-md inline-flex items-center justify-center gap-1.5"
                     >
-                      Back to Sign In
+                      <span>Return to Sign In</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
@@ -1018,7 +1220,9 @@ export default function AuthModal({ onLoginSuccess }) {
                     Set new password
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    Create a strong new password for your recruiter account.
+                    {tokenEmail
+                      ? `Create a strong new password for ${tokenEmail}.`
+                      : 'Create a strong new password for your recruiter account.'}
                   </p>
                 </div>
 
@@ -1043,6 +1247,47 @@ export default function AuthModal({ onLoginSuccess }) {
                       <span>Continue to Sign In</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
+                  </div>
+                ) : isVerifyingToken ? (
+                  <div className="py-12 text-center space-y-3">
+                    <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-xs text-slate-400 font-medium">
+                      Verifying secure reset link...
+                    </p>
+                  </div>
+                ) : tokenError || !resetToken ? (
+                  <div className="py-4 space-y-4">
+                    <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/80 text-red-300 text-xs flex items-start gap-2.5">
+                      <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <div className="leading-relaxed">
+                        <div className="font-semibold text-red-200">Invalid or Expired Reset Link</div>
+                        <p className="mt-1 text-red-300/90 text-xs">
+                          {tokenError || 'This password reset link is invalid, has expired, or has already been used.'}
+                        </p>
+                        <p className="mt-1.5 text-slate-400 text-[11px]">
+                          For security, password reset links expire after 20 minutes and can only be used once. Please request a new link.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => switchView('forgot-password')}
+                      className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-md inline-flex items-center justify-center gap-1.5"
+                    >
+                      <span>Request a New Reset Link</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    <div className="text-center pt-1">
+                      <button
+                        type="button"
+                        onClick={() => switchView('login')}
+                        className="text-xs text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel and return to Sign In
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleResetSubmit} className="space-y-4">

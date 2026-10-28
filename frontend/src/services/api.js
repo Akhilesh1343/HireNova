@@ -102,6 +102,34 @@ export async function resetPasswordApi({ token, new_password, confirm_password }
   return handleResponse(response);
 }
 
+export async function verifyResetTokenApi(token) {
+  const response = await fetch(`${API_BASE_URL}/auth/verify-reset-token?token=${encodeURIComponent(token)}`);
+  return handleResponse(response);
+}
+
+export async function getOAuthConfigApi() {
+  const response = await fetch(`${API_BASE_URL}/auth/oauth/config`);
+  return handleResponse(response);
+}
+
+export async function getOAuthUrlApi(provider) {
+  const response = await fetch(`${API_BASE_URL}/auth/oauth/${provider}/url`);
+  return handleResponse(response);
+}
+
+export async function oauthLoginApi(provider, data) {
+  const response = await fetch(`${API_BASE_URL}/auth/oauth/${provider}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const resData = await handleResponse(response);
+  if (resData.access_token) {
+    setAuthToken(resData.access_token);
+  }
+  return resData;
+}
+
 export async function getMeApi() {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     headers: getAuthHeaders(),

@@ -18,24 +18,25 @@
     <script>
       (function() {
         try {
-          var saved = localStorage.getItem('hirenova_theme') || localStorage.getItem('airecruitx_theme') || localStorage.getItem('reqretx_theme');
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var theme = saved ? saved : (prefersDark ? 'dark' : 'light');
+          var saved = localStorage.getItem('hirenova_theme') || localStorage.getItem('hirenova_preferred_theme') || localStorage.getItem('airecruitx_theme') || localStorage.getItem('reqretx_theme');
+          var validThemes = ['light', 'emerald', 'purple', 'gold', 'orange'];
+          if (saved === 'dark' || saved === 'dim') saved = 'emerald';
+          if (saved === 'rose') saved = 'purple';
+          var theme = (saved && validThemes.indexOf(saved) !== -1) ? saved : 'emerald';
           var root = document.documentElement;
+          root.setAttribute('data-theme', theme);
           if (theme === 'light') {
             root.classList.remove('dark');
             root.classList.add('light');
-            root.setAttribute('data-theme', 'light');
           } else {
             root.classList.remove('light');
             root.classList.add('dark');
-            root.setAttribute('data-theme', 'dark');
           }
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-[#050807] text-[#F8FAFC] antialiased selection:bg-[#059669] selection:text-white font-sans overflow-x-hidden transition-colors duration-200">
+  <body class="antialiased font-sans overflow-x-hidden transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

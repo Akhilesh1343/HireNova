@@ -29,6 +29,7 @@ import {
 import AnimatedNumber from '../components/common/AnimatedNumber';
 import { RecommendationBadge } from '../components/common/Badge';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { formatRole } from '../utils/rbac';
 import {
   getDashboardSummaryApi,
@@ -44,6 +45,7 @@ export default function Dashboard({
   setSelectedJobForScreening
 }) {
   const { user, isAuthenticated, openAuthModal } = useAuth();
+  const { theme, isDark } = useTheme();
 
   // State management for live API data
   const [summaryData, setSummaryData] = useState(null);
@@ -251,10 +253,24 @@ export default function Dashboard({
           Distinguishes authenticated user workspace from public visitor landing
           Styled with Obsidian base, Emerald highlights, and metallic depth.
           ========================================================================= */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 bg-gradient-to-br from-[#0B1210] via-[#0E1A16] to-[#07100D] border border-emerald-500/20 shadow-2xl text-white">
-        {/* Decorative emerald background glows */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-[#059669]/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-16 w-60 h-60 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+      <div
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 border shadow-lg transition-all backdrop-blur-xl theme-card"
+        style={{
+          backgroundColor: 'var(--theme-card-bg)',
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-primary)',
+          boxShadow: 'var(--card-shadow)'
+        }}
+      >
+        {/* Decorative background glows */}
+        <div
+          className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full blur-3xl pointer-events-none opacity-40"
+          style={{ backgroundColor: 'var(--accent-primary)' }}
+        />
+        <div
+          className="absolute bottom-0 left-1/3 -mb-16 w-60 h-60 rounded-full blur-3xl pointer-events-none opacity-20"
+          style={{ backgroundColor: 'var(--accent-bright)' }}
+        />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 min-w-0">
           {/* Left Column: Greeting & Value Proposition */}
@@ -262,20 +278,33 @@ export default function Dashboard({
             {isAuthenticated ? (
               <>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/50 text-[#A7F3D0] border border-emerald-500/30 flex items-center gap-1.5 shadow-xs">
-                    <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                  <span
+                    className="px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 shadow-xs"
+                    style={{
+                      backgroundColor: 'var(--accent-subtle)',
+                      color: 'var(--accent-text)',
+                      borderColor: 'var(--border-subtle)'
+                    }}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-bright)' }} />
                     {formattedRoleName} Workspace
                   </span>
                   {isAdmin && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-500 dark:text-amber-300 border border-amber-500/30">
                       System Administrator
                     </span>
                   )}
                 </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight font-display break-words">
-                  Welcome in, <span className="text-[#34D399]">{displayName}</span>
+                <h1
+                  className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight font-display break-words"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  Welcome in, <span style={{ color: 'var(--accent-bright)' }}>{displayName}</span>
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-300 mt-2 font-medium leading-relaxed max-w-2xl">
+                <p
+                  className="text-xs sm:text-sm mt-2 font-medium leading-relaxed max-w-2xl"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   {isRecruiter && "Ready to screen resumes, manage candidate shortlists, and match talent to active requisitions."}
                   {isHiringManager && "Review shortlisted candidates, evaluate technical fits, and coordinate interview rounds."}
                   {isHrLead && "Monitor talent acquisition performance, evaluate pipeline throughput, and audit screening reports."}
@@ -284,40 +313,77 @@ export default function Dashboard({
               </>
             ) : (
               <>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/50 text-[#A7F3D0] border border-emerald-500/30 mb-3 shadow-xs">
-                  <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border mb-3 shadow-xs"
+                  style={{
+                    backgroundColor: 'var(--accent-subtle)',
+                    color: 'var(--accent-text)',
+                    borderColor: 'var(--border-subtle)'
+                  }}
+                >
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--accent-bright)' }} />
                   <span>Next-Gen Recruitment Intelligence</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight font-display break-words">
-                  HireNova <span className="text-[#34D399]">Recruitment Platform</span>
+                <h1
+                  className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight font-display break-words"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  HireNova <span style={{ color: 'var(--accent-bright)' }}>Recruitment Platform</span>
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-300 mt-2 font-medium leading-relaxed max-w-2xl">
+                <p
+                  className="text-xs sm:text-sm mt-2 font-medium leading-relaxed max-w-2xl"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
                   Intelligent candidate ranking and automated resume screening powered by TF-IDF semantic similarity, Scikit-learn classification, and 60/40 weighted ATS precision.
                 </p>
               </>
             )}
 
             {/* Architecture / Formula Status Pills */}
-            <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-white/10 text-xs">
+            <div
+              className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t text-xs"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               {/* Formula Pill */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
-                <Target className="w-3.5 h-3.5 text-[#34D399]" />
-                <span className="text-slate-300">ATS Formula:</span>
-                <span className="font-bold text-white">40% JD + 60% Skills</span>
+              <div
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold border backdrop-blur-sm"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <Target className="w-3.5 h-3.5" style={{ color: 'var(--accent-bright)' }} />
+                <span style={{ color: 'var(--text-secondary)' }}>ATS Formula:</span>
+                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>40% JD + 60% Skills</span>
               </div>
 
               {/* Threshold Pill */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-slate-300">Shortlist:</span>
-                <span className="font-bold text-emerald-300">Score &ge; 50%</span>
+              <div
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold border backdrop-blur-sm"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--accent-bright)' }} />
+                <span style={{ color: 'var(--text-secondary)' }}>Shortlist:</span>
+                <span className="font-bold" style={{ color: 'var(--accent-bright)' }}>Score &ge; 50%</span>
               </div>
 
               {/* ML Engine Status */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
+              <div
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full font-semibold border backdrop-blur-sm"
+                style={{
+                  backgroundColor: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-subtle)',
+                  color: 'var(--text-primary)'
+                }}
+              >
                 <span className={`w-2 h-2 rounded-full ${isSystemOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                <span className="text-slate-300">ML Engine:</span>
-                <span className={`font-bold ${isSystemOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
+                <span style={{ color: 'var(--text-secondary)' }}>ML Engine:</span>
+                <span className={`font-bold ${isSystemOnline ? 'text-emerald-500 dark:text-emerald-300' : 'text-amber-500 dark:text-amber-300'}`}>
                   {isSystemOnline ? 'Online' : 'Standby'}
                 </span>
               </div>
@@ -332,7 +398,11 @@ export default function Dashboard({
                 <button
                   id="dashboard-cta-screen"
                   onClick={() => handleNavigate('screening')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                  style={{
+                    backgroundColor: 'var(--accent-primary)',
+                    color: '#FFFFFF'
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl hover:opacity-90 font-bold text-sm shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>Start Screening</span>
@@ -344,9 +414,13 @@ export default function Dashboard({
                 <button
                   id="dashboard-cta-jobs"
                   onClick={() => handleNavigate('jobs')}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                  style={{
+                    borderColor: 'var(--border-subtle)',
+                    color: 'var(--text-primary)'
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 font-bold text-sm border transition-all min-h-[42px]"
                 >
-                  <Briefcase className="w-4 h-4 text-[#34D399]" />
+                  <Briefcase className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
                   <span>Manage Jobs</span>
                 </button>
               )}
@@ -357,7 +431,11 @@ export default function Dashboard({
                   <button
                     id="dashboard-cta-shortlist"
                     onClick={() => handleNavigate('shortlist')}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                    style={{
+                      backgroundColor: 'var(--accent-primary)',
+                      color: '#FFFFFF'
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl hover:opacity-90 font-bold text-sm shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
                   >
                     <Star className="w-4 h-4 text-amber-300 fill-amber-300" />
                     <span>Review Shortlist</span>
@@ -365,9 +443,13 @@ export default function Dashboard({
                   <button
                     id="dashboard-cta-interviews"
                     onClick={() => handleNavigate('interviews')}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                    style={{
+                      borderColor: 'var(--border-subtle)',
+                      color: 'var(--text-primary)'
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 font-bold text-sm border transition-all min-h-[42px]"
                   >
-                    <CalendarIcon className="w-4 h-4 text-[#34D399]" />
+                    <CalendarIcon className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
                     <span>Interviews Pipeline</span>
                   </button>
                 </>
@@ -379,7 +461,11 @@ export default function Dashboard({
                   <button
                     id="dashboard-cta-analytics"
                     onClick={() => handleNavigate('analytics')}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                    style={{
+                      backgroundColor: 'var(--accent-primary)',
+                      color: '#FFFFFF'
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl hover:opacity-90 font-bold text-sm shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
                   >
                     <TrendingUp className="w-4 h-4" />
                     <span>View Analytics</span>
@@ -387,9 +473,13 @@ export default function Dashboard({
                   <button
                     id="dashboard-cta-reports"
                     onClick={() => handleNavigate('reports')}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                    style={{
+                      borderColor: 'var(--border-subtle)',
+                      color: 'var(--text-primary)'
+                    }}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 font-bold text-sm border transition-all min-h-[42px]"
                   >
-                    <FileSearch className="w-4 h-4 text-[#34D399]" />
+                    <FileSearch className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
                     <span>Audit Reports</span>
                   </button>
                 </>
@@ -410,24 +500,45 @@ export default function Dashboard({
         <div
           id="kpi-candidates-card"
           onClick={() => handleNavigate('rankings')}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          className="p-4 sm:p-5 rounded-2xl border shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-w-0 theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)',
+          }}
           title={isAuthenticated ? "View Candidate Rankings" : "Sign in to view candidates"}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Candidates
             </span>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/40 border border-emerald-500/25 text-[#34D399] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+            <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform shrink-0"
+              style={{
+                backgroundColor: 'var(--accent-subtle)',
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--accent-bright)'
+              }}
+            >
               <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+            <div
+              className="text-2xl sm:text-3xl font-black tabular-nums tracking-tight font-display"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <AnimatedNumber value={totalCandidates} />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+            <div
+              className="flex items-center justify-between text-[11px] mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <span>Talent corpus indexed</span>
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#34D399]" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent-bright)' }} />
             </div>
           </div>
         </div>
@@ -436,24 +547,45 @@ export default function Dashboard({
         <div
           id="kpi-jobs-card"
           onClick={() => handleNavigate('jobs')}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          className="p-4 sm:p-5 rounded-2xl border shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-w-0 theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)',
+          }}
           title={isAuthenticated ? "View Active Jobs" : "Sign in to view jobs"}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Active Jobs
             </span>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/40 border border-teal-500/25 text-teal-300 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+            <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform shrink-0"
+              style={{
+                backgroundColor: 'var(--accent-subtle)',
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--accent-bright)'
+              }}
+            >
               <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+            <div
+              className="text-2xl sm:text-3xl font-black tabular-nums tracking-tight font-display"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <AnimatedNumber value={activeJobsCount} />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+            <div
+              className="flex items-center justify-between text-[11px] mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <span>Open requisitions</span>
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-teal-300" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent-bright)' }} />
             </div>
           </div>
         </div>
@@ -462,24 +594,45 @@ export default function Dashboard({
         <div
           id="kpi-screened-card"
           onClick={() => handleNavigate('screening')}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          className="p-4 sm:p-5 rounded-2xl border shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-w-0 theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)',
+          }}
           title={isAuthenticated ? "View Screening History" : "Sign in to view screenings"}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Resumes Screened
             </span>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-[#34D399] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+            <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform shrink-0"
+              style={{
+                backgroundColor: 'var(--accent-subtle)',
+                borderColor: 'var(--border-subtle)',
+                color: 'var(--accent-bright)'
+              }}
+            >
               <FileSearch className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+            <div
+              className="text-2xl sm:text-3xl font-black tabular-nums tracking-tight font-display"
+              style={{ color: 'var(--text-primary)' }}
+            >
               <AnimatedNumber value={screenedCount} />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+            <div
+              className="flex items-center justify-between text-[11px] mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <span>Evaluated by ATS</span>
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#34D399]" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--accent-bright)' }} />
             </div>
           </div>
         </div>
@@ -488,24 +641,37 @@ export default function Dashboard({
         <div
           id="kpi-shortlist-card"
           onClick={() => handleNavigate('shortlist')}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          className="p-4 sm:p-5 rounded-2xl border shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-w-0 theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)',
+          }}
           title={isAuthenticated ? "View Shortlist" : "Sign in to view shortlist"}
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Shortlisted
             </span>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-950/40 border border-amber-500/25 text-amber-300 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+            <div
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border flex items-center justify-center group-hover:scale-110 transition-transform shrink-0 bg-amber-500/10 border-amber-500/25 text-amber-500"
+            >
               <Star className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl sm:text-3xl font-black text-amber-400 tabular-nums tracking-tight font-display">
+            <div className="text-2xl sm:text-3xl font-black text-amber-500 dark:text-amber-400 tabular-nums tracking-tight font-display">
               <AnimatedNumber value={shortlistedCount} />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+            <div
+              className="flex items-center justify-between text-[11px] mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
               <span>Score &ge; 50.0%</span>
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-amber-400" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-amber-500" />
             </div>
           </div>
         </div>
@@ -516,18 +682,34 @@ export default function Dashboard({
           3. RECRUITMENT PIPELINE FUNNEL SECTION
           Visual progress: Applied -> Screened -> Shortlisted -> Interviewing
           ========================================================================= */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 text-[#F8FAFC]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/[0.08] gap-2">
+      <div
+        className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 theme-card"
+        style={{
+          backgroundColor: 'var(--theme-card-bg)',
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-primary)'
+        }}
+      >
+        <div
+          className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b gap-2"
+          style={{ borderColor: 'var(--border-subtle)' }}
+        >
           <div>
-            <h3 className="font-extrabold text-sm sm:text-base text-[#F8FAFC] flex items-center gap-2 font-display">
-              <BarChart3 className="w-4 h-4 text-[#34D399]" />
+            <h3
+              className="font-extrabold text-sm sm:text-base flex items-center gap-2 font-display"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <BarChart3 className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
               Recruitment Pipeline Progress
             </h3>
-            <p className="text-xs text-[#94A3A8] mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Live funnel stages tracked from initial corpus intake through ATS screening to interview rounds.
             </p>
           </div>
-          <div className="text-xs font-semibold text-[#34D399] flex items-center gap-1.5 shrink-0">
+          <div
+            className="text-xs font-semibold flex items-center gap-1.5 shrink-0"
+            style={{ color: 'var(--accent-bright)' }}
+          >
             <span>Overall Conversion:</span>
             <span className="font-bold">
               {totalCandidates > 0 ? `${((shortlistedCount / totalCandidates) * 100).toFixed(1)}%` : '0%'}
@@ -580,19 +762,35 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-w-0">
         
         {/* Left Column: 7-Day Screening Activity Chart */}
-        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+        <div
+          className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 flex flex-col justify-between theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div
+              className="flex items-center justify-between pb-3 border-b"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="min-w-0 pr-2">
-                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-[#34D399]" />
+                <h4
+                  className="font-extrabold text-xs sm:text-sm flex items-center gap-1.5"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  <TrendingUp className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
                   <span>Hiring & Screening Activity</span>
                 </h4>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-xl sm:text-2xl font-black text-[#F8FAFC] tracking-tight font-display">
+                  <span
+                    className="text-xl sm:text-2xl font-black tracking-tight font-display"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     <AnimatedNumber value={screenedCount} />
                   </span>
-                  <span className="text-[11px] font-semibold text-[#94A3A8]">
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
                     Total Evaluations Recorded
                   </span>
                 </div>
@@ -682,12 +880,25 @@ export default function Dashboard({
         </div>
 
         {/* Right Column: Compact ATS Matching Overview & Scoring Formula */}
-        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+        <div
+          className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 flex flex-col justify-between theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div
+              className="flex items-center justify-between pb-3 border-b"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-[#34D399]" />
-                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                <Target className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
+                <h4
+                  className="font-extrabold text-xs sm:text-sm uppercase tracking-wider"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   ATS Matching Overview
                 </h4>
               </div>
@@ -778,12 +989,25 @@ export default function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-w-0">
         
         {/* Left Column (5 cols on lg): Upcoming Pipeline & Interviews */}
-        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+        <div
+          className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 flex flex-col justify-between theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div
+              className="flex items-center justify-between pb-3 border-b"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-[#34D399]" />
-                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                <CalendarIcon className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
+                <h4
+                  className="font-extrabold text-xs sm:text-sm uppercase tracking-wider"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   Upcoming Interviews
                 </h4>
               </div>
@@ -874,12 +1098,25 @@ export default function Dashboard({
         </div>
 
         {/* Right Column (7 cols on lg): Recent Screening Activity */}
-        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+        <div
+          className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 flex flex-col justify-between theme-card"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+            <div
+              className="flex items-center justify-between pb-3 border-b"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-[#34D399]" />
-                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                <Award className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
+                <h4
+                  className="font-extrabold text-xs sm:text-sm uppercase tracking-wider"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   Recent Screening Activity
                 </h4>
               </div>
@@ -1004,11 +1241,24 @@ export default function Dashboard({
           6. RECENT ACTIVE JOB OPENINGS (CONNECTED TO REAL DATABASE ENDPOINTS)
           Working "Screen Role" & "View All Jobs" links
           ========================================================================= */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 text-[#F8FAFC]">
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+      <div
+        className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl border shadow-xs min-w-0 theme-card"
+        style={{
+          backgroundColor: 'var(--theme-card-bg)',
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-primary)'
+        }}
+      >
+        <div
+          className="flex items-center justify-between pb-4 border-b"
+          style={{ borderColor: 'var(--border-subtle)' }}
+        >
           <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-[#34D399]" />
-            <h3 className="font-extrabold text-xs sm:text-base text-[#F8FAFC] font-display">
+            <Briefcase className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
+            <h3
+              className="font-extrabold text-xs sm:text-base font-display"
+              style={{ color: 'var(--text-primary)' }}
+            >
               Active Job Requisitions
             </h3>
           </div>

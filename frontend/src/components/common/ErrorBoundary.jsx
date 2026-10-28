@@ -33,13 +33,20 @@ export default class ErrorBoundary extends React.Component {
       }
 
       return (
-        <div className="p-6 my-6 rounded-2xl bg-[#0B1210] border border-emerald-500/30 text-[#F8FAFC] max-w-xl mx-auto shadow-2xl text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+        <div
+          className="p-6 my-6 rounded-2xl theme-card border max-w-xl mx-auto shadow-2xl text-center space-y-4"
+          style={{
+            backgroundColor: 'var(--theme-card-bg)',
+            borderColor: 'var(--border-subtle)',
+            color: 'var(--text-primary)'
+          }}
+        >
+          <div className="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Something interrupted this view</h3>
-            <p className="text-xs text-[#94A3A8] mt-1">
+            <h3 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Something interrupted this view</h3>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               A temporary rendering glitch was safely contained to keep your session active.
             </p>
           </div>

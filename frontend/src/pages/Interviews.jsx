@@ -147,7 +147,12 @@ export default function Interviews({ onSelectCandidate }) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search candidate, role, interviewer..."
-            className="w-full pl-8 pr-4 py-2 text-xs bg-[#0B1210]/90 border border-emerald-500/20 rounded-xl text-white placeholder:text-[#94A3A8]/60 focus:outline-none focus:border-[#34D399]"
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              borderColor: 'var(--border-subtle)',
+              color: 'var(--text-primary)'
+            }}
+            className="w-full pl-8 pr-4 py-2 text-xs border rounded-xl focus:outline-none"
           />
         </div>
 
@@ -155,7 +160,12 @@ export default function Interviews({ onSelectCandidate }) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="text-xs px-3 py-2 rounded-xl border border-emerald-500/20 bg-[#0B1210]/90 text-white focus:outline-none focus:border-[#34D399]"
+            style={{
+              backgroundColor: 'var(--bg-input)',
+              borderColor: 'var(--border-subtle)',
+              color: 'var(--text-primary)'
+            }}
+            className="text-xs px-3 py-2 rounded-xl border focus:outline-none"
           >
             <option value="ALL">All Status</option>
             <option value="SCHEDULED">Scheduled</option>
@@ -166,7 +176,14 @@ export default function Interviews({ onSelectCandidate }) {
       </div>
 
       {/* Interviews Table View */}
-      <div className="bg-[#0B1210]/90 border border-emerald-500/15 rounded-2xl overflow-hidden shadow-sm">
+      <div
+        className="theme-card border rounded-2xl overflow-hidden shadow-xs"
+        style={{
+          backgroundColor: 'var(--theme-card-bg)',
+          borderColor: 'var(--border-subtle)',
+          color: 'var(--text-primary)'
+        }}
+      >
         {isLoading ? (
           <div className="py-12 text-center text-xs text-[#94A3A8]">
             Loading scheduled interviews...
@@ -283,11 +300,21 @@ export default function Interviews({ onSelectCandidate }) {
       {/* Schedule Interview Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-modal">
-          <div className="bg-[#0B1210] border border-emerald-500/20 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-emerald-500/15">
+          <div
+            className="theme-card border rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            style={{
+              backgroundColor: 'var(--theme-card-bg)',
+              borderColor: 'var(--border-subtle)',
+              color: 'var(--text-primary)'
+            }}
+          >
+            <div
+              className="flex items-center justify-between pb-3 border-b"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#34D399]" />
-                <h3 className="font-bold text-base text-white">Schedule Interview</h3>
+                <Calendar className="w-4 h-4" style={{ color: 'var(--accent-bright)' }} />
+                <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Schedule Interview</h3>
               </div>
               <button
                 onClick={() => setShowScheduleModal(false)}

@@ -45,7 +45,7 @@ function resolveTabFromUrl() {
 
 function AppContent() {
   const { user, openAuthModal, pendingTab, setPendingTab } = useAuth();
-  const { isDark } = useTheme();
+  const { theme, isDark } = useTheme();
 
   const [currentTab, setCurrentTab] = useState(() => resolveTabFromUrl());
   const [selectedCandidateId, setSelectedCandidateId] = useState(null);
@@ -129,16 +129,63 @@ function AppContent() {
 
   // Render operational recruiter application workspace
   return (
-    <div className="min-h-screen flex flex-col bg-transparent text-[#F8FAFC] font-sans transition-colors duration-200 overflow-x-hidden w-full relative selection:bg-emerald-600 selection:text-white">
-      {/* Exact Cinematic Emerald Metallic Abstract Background */}
+    <div
+      className="min-h-screen flex flex-col font-sans transition-colors duration-200 overflow-x-hidden w-full relative"
+      style={{
+        backgroundColor: 'var(--bg-page)',
+        color: 'var(--text-primary)',
+      }}
+    >
+      {/* Dynamic Background tailored to active theme */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 bg-[#050807]" />
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-95"
-          style={{ backgroundImage: `url('/emerald-background.png')` }}
-        />
-        {/* Subtle dark tint to preserve 100% card & text readability across all displays */}
-        <div className="absolute inset-0 bg-[#050807]/30 backdrop-blur-[0.5px]" />
+        {theme === 'emerald' && (
+          <>
+            <div className="absolute inset-0 bg-[#050807]" />
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-95"
+              style={{ backgroundImage: `url('/theme-emerald-bg.png')` }}
+            />
+            <div className="absolute inset-0 bg-[#050807]/20" />
+          </>
+        )}
+        {theme === 'purple' && (
+          <>
+            <div className="absolute inset-0 bg-[#08040C]" />
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-95"
+              style={{ backgroundImage: `url('/theme-purple-bg.png')` }}
+            />
+            <div className="absolute inset-0 bg-[#08040C]/20" />
+          </>
+        )}
+        {theme === 'gold' && (
+          <>
+            <div className="absolute inset-0 bg-[#0C0E12]" />
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-95"
+              style={{ backgroundImage: `url('/theme-gold-bg.png')` }}
+            />
+            <div className="absolute inset-0 bg-[#0C0E12]/20" />
+          </>
+        )}
+        {theme === 'orange' && (
+          <>
+            <div className="absolute inset-0 bg-[#0C0603]" />
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-95"
+              style={{ backgroundImage: `url('/theme-orange-bg.png')` }}
+            />
+            <div className="absolute inset-0 bg-[#0C0603]/20" />
+          </>
+        )}
+        {theme === 'light' && (
+          <div
+            className="absolute inset-0 bg-[#F8FAFC]"
+            style={{
+              backgroundImage: 'radial-gradient(ellipse at 50% -20%, rgba(5, 150, 105, 0.06), transparent 70%)'
+            }}
+          />
+        )}
       </div>
 
       {/* Top Horizontal Navigation Bar */}

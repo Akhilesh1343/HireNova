@@ -2,6 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   HIRENOVA 5-THEME ARCHITECTURE (Light, Emerald, Purple, Gold, Orange)
+   Centralized CSS Variables defined at root & scoped per data-theme attribute
+   ========================================================================== */
+
+/* 1. LIGHT THEME (Clean warm-white, dark text, gray borders, emerald accents) */
+:root,
+[data-theme="light"],
+html.light {
+  --bg-page: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --bg-hover: #E2E8F0;
+  --bg-input: #FFFFFF;
+  --bg-overlay: rgba(15, 23, 42, 0.45);
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  --accent-bright: #10B981;
+  --accent-subtle: #ECFDF5;
+  --accent-text: #047857;
+  --accent-ring: rgba(5, 150, 105, 0.35);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --theme-navbar-bg: rgba(255, 255, 255, 0.94);
+  --theme-card-bg: #FFFFFF;
+  --theme-dropdown-bg: #FFFFFF;
+  --scrollbar-track: #F1F5F9;
+  --scrollbar-thumb: #CBD5E1;
+}
+
+/* 2. EMERALD THEME (Signature Obsidian & Metallic Diagonal Emerald) */
+[data-theme="emerald"] {
+  --bg-page: #050807;
+  --bg-surface: rgba(11, 18, 16, 0.70);
+  --bg-elevated: rgba(19, 31, 27, 0.75);
+  --bg-hover: rgba(24, 42, 36, 0.85);
+  --bg-input: rgba(9, 14, 13, 0.85);
+  --bg-overlay: rgba(2, 4, 3, 0.85);
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3A8;
+  --text-muted: #637874;
+  --border-subtle: rgba(52, 211, 153, 0.18);
+  --border-strong: rgba(52, 211, 153, 0.32);
+  --accent-primary: #059669;
+  --accent-hover: #047857;
+  --accent-bright: #34D399;
+  --accent-subtle: rgba(52, 211, 153, 0.14);
+  --accent-text: #34D399;
+  --accent-ring: rgba(52, 211, 153, 0.4);
+  --card-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.65);
+  --theme-navbar-bg: rgba(5, 8, 7, 0.78);
+  --theme-card-bg: rgba(11, 18, 16, 0.70);
+  --theme-dropdown-bg: rgba(11, 18, 16, 0.94);
+  --scrollbar-track: #050807;
+  --scrollbar-thumb: #182A24;
+}
+
+/* 3. PURPLE THEME (Obsidian & Radiant Neon Purple Curves) */
+[data-theme="purple"] {
+  --bg-page: #08040C;
+  --bg-surface: rgba(18, 10, 28, 0.68);
+  --bg-elevated: rgba(32, 17, 50, 0.74);
+  --bg-hover: rgba(45, 24, 70, 0.85);
+  --bg-input: rgba(14, 8, 22, 0.85);
+  --bg-overlay: rgba(8, 4, 12, 0.85);
+  --text-primary: #FAF5FF;
+  --text-secondary: #D8B4FE;
+  --text-muted: #8B7A9F;
+  --border-subtle: rgba(192, 132, 252, 0.20);
+  --border-strong: rgba(192, 132, 252, 0.36);
+  --accent-primary: #9333EA;
+  --accent-hover: #7E22CE;
+  --accent-bright: #C084FC;
+  --accent-subtle: rgba(147, 51, 234, 0.16);
+  --accent-text: #C084FC;
+  --accent-ring: rgba(192, 132, 252, 0.4);
+  --card-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.65);
+  --theme-navbar-bg: rgba(9, 4, 15, 0.78);
+  --theme-card-bg: rgba(18, 10, 28, 0.68);
+  --theme-dropdown-bg: rgba(18, 10, 28, 0.94);
+  --scrollbar-track: #08040C;
+  --scrollbar-thumb: #201132;
+}
+
+/* 4. GOLD THEME (Charcoal & Metallic Gold Bands with Stippling) */
+[data-theme="gold"] {
+  --bg-page: #0C0E12;
+  --bg-surface: rgba(18, 20, 26, 0.70);
+  --bg-elevated: rgba(30, 33, 42, 0.75);
+  --bg-hover: rgba(44, 48, 60, 0.85);
+  --bg-input: rgba(14, 16, 21, 0.85);
+  --bg-overlay: rgba(12, 14, 18, 0.85);
+  --text-primary: #FFFBEB;
+  --text-secondary: #CBD5E1;
+  --text-muted: #788294;
+  --border-subtle: rgba(251, 191, 36, 0.22);
+  --border-strong: rgba(251, 191, 36, 0.38);
+  --accent-primary: #D97706;
+  --accent-hover: #B45309;
+  --accent-bright: #FBBF24;
+  --accent-subtle: rgba(217, 119, 6, 0.16);
+  --accent-text: #FBBF24;
+  --accent-ring: rgba(251, 191, 36, 0.4);
+  --card-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.65);
+  --theme-navbar-bg: rgba(12, 14, 18, 0.78);
+  --theme-card-bg: rgba(18, 20, 26, 0.70);
+  --theme-dropdown-bg: rgba(18, 20, 26, 0.94);
+  --scrollbar-track: #0C0E12;
+  --scrollbar-thumb: #1E212A;
+}
+
+/* 5. ORANGE THEME (Obsidian & Liquid Copper Metallic Waves) */
+[data-theme="orange"] {
+  --bg-page: #0C0603;
+  --bg-surface: rgba(22, 11, 7, 0.68);
+  --bg-elevated: rgba(38, 19, 11, 0.74);
+  --bg-hover: rgba(54, 27, 16, 0.85);
+  --bg-input: rgba(16, 8, 5, 0.85);
+  --bg-overlay: rgba(12, 6, 3, 0.85);
+  --text-primary: #FFF7ED;
+  --text-secondary: #FED7AA;
+  --text-muted: #876E62;
+  --border-subtle: rgba(251, 146, 60, 0.20);
+  --border-strong: rgba(251, 146, 60, 0.36);
+  --accent-primary: #EA580C;
+  --accent-hover: #C2410C;
+  --accent-bright: #FB923C;
+  --accent-subtle: rgba(234, 88, 12, 0.16);
+  --accent-text: #FB923C;
+  --accent-ring: rgba(251, 146, 60, 0.4);
+  --card-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.65);
+  --theme-navbar-bg: rgba(12, 6, 3, 0.78);
+  --theme-card-bg: rgba(22, 11, 7, 0.68);
+  --theme-dropdown-bg: rgba(22, 11, 7, 0.94);
+  --scrollbar-track: #0C0603;
+  --scrollbar-thumb: #26130B;
+}
+
 @layer base {
   html, body {
     overflow-x: hidden;
@@ -10,16 +152,12 @@
   }
 
   body {
-    background-color: #050807;
-    background-image: url('/emerald-background.png');
-    background-repeat: no-repeat;
-    background-position: center top;
-    background-size: cover;
-    background-attachment: fixed;
-    color: #F8FAFC;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 160ms ease, color 160ms ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -33,28 +171,28 @@
   }
 }
 
-/* Subtle architectural dark scrollbars with emerald accents */
+/* Dynamic theme scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #050807;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #182A24;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #059669;
+  background: var(--accent-primary);
 }
 
-/* Clean emerald selection tint */
+/* Dynamic selection tint */
 ::selection {
-  background-color: #059669;
+  background-color: var(--accent-primary);
   color: #FFFFFF;
 }
 
@@ -63,110 +201,283 @@ button, a, input, select, textarea {
   transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Smooth global theme transitions (180ms ease) */
+/* Global smooth theme transitions */
 html body,
 html header,
 html aside,
 html main,
-html .bg-navy-950,
-html .bg-navy-900,
-html .bg-navy-850,
-html .bg-navy-800 {
+html nav,
+.theme-card,
+.theme-navbar,
+.theme-dropdown {
   transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-/* Subtle Grid Patterns */
-.bg-subtle-grid {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(52, 211, 153, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(52, 211, 153, 0.035) 1px, transparent 1px);
+/* ==========================================================================
+   SEMANTIC THEME CLASS HELPERS
+   ========================================================================== */
+.theme-bg-page {
+  background-color: var(--bg-page) !important;
+}
+
+.theme-bg-surface {
+  background-color: var(--bg-surface) !important;
+}
+
+.theme-bg-elevated {
+  background-color: var(--bg-elevated) !important;
+}
+
+.theme-text-primary {
+  color: var(--text-primary) !important;
+}
+
+.theme-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.theme-text-muted {
+  color: var(--text-muted) !important;
+}
+
+.theme-border {
+  border-color: var(--border-subtle) !important;
+}
+
+.theme-border-strong {
+  border-color: var(--border-strong) !important;
+}
+
+.theme-accent {
+  color: var(--accent-primary) !important;
+}
+
+.theme-accent-bright {
+  color: var(--accent-bright) !important;
+}
+
+.theme-accent-bg {
+  background-color: var(--accent-primary) !important;
+}
+
+.theme-accent-subtle-bg {
+  background-color: var(--accent-subtle) !important;
+}
+
+.theme-card {
+  background-color: var(--theme-card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.theme-dropdown {
+  background-color: var(--theme-dropdown-bg);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-navbar {
+  background-color: var(--theme-navbar-bg);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* ==========================================================================
-   HIRENOVA EMERALD METALLIC DESIGN SYSTEM (Prompt Specifications)
-   Main background: #050807 | Card: #0B1210 | Primary: #059669
-   Bright: #34D399 | Mint: #A7F3D0 | Text: #F8FAFC | Secondary: #94A3A8
+   LIGHT MODE OVERRIDES FOR LEGACY HARDCODED TOKENS
+   Guarantees 100% clean light mode across all cards, modals, and tables
    ========================================================================== */
-
-:root {
-  --hirenova-bg: #050807;
-  --hirenova-card: #0B1210;
-  --hirenova-border: rgba(52, 211, 153, 0.12);
-  --hirenova-primary: #059669;
-  --hirenova-bright: #34D399;
-  --hirenova-mint: #A7F3D0;
-  --hirenova-text: #F8FAFC;
-  --hirenova-secondary: #94A3A8;
+[data-theme="light"] .bg-\[\#0B1210\],
+[data-theme="light"] .bg-\[\#0B1210\]\/90,
+[data-theme="light"] .bg-\[\#0B1210\]\/95,
+[data-theme="light"] .bg-\[\#050807\],
+[data-theme="light"] .bg-\[\#050807\]\/80,
+[data-theme="light"] .bg-\[\#050807\]\/90,
+[data-theme="light"] .bg-\[\#0E1714\],
+[data-theme="light"] .bg-\[\#131F1B\],
+[data-theme="light"] .bg-\[\#0E1424\],
+[data-theme="light"] .bg-\[\#121A2F\],
+[data-theme="light"] .bg-\[\#090D18\],
+[data-theme="light"] .bg-obsidian-950,
+[data-theme="light"] .bg-obsidian-900,
+[data-theme="light"] .bg-obsidian-850,
+[data-theme="light"] .bg-obsidian-800,
+[data-theme="light"] .bg-obsidian-750,
+[data-theme="light"] .bg-navy-950,
+[data-theme="light"] .bg-navy-900,
+[data-theme="light"] .bg-navy-850,
+[data-theme="light"] .bg-navy-800 {
+  background-color: var(--bg-surface) !important;
 }
 
-/* Glass Panel with Obsidian-Emerald Tint */
-.glass-panel {
-  background: rgba(11, 18, 16, 0.88);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(52, 211, 153, 0.14);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 12px 35px -5px rgba(0, 0, 0, 0.55);
+[data-theme="light"] .text-\[\#F8FAFC\],
+[data-theme="light"] .text-obsidian-50,
+[data-theme="light"] .text-navy-100 {
+  color: var(--text-primary) !important;
 }
 
-/* Contrast Dark Obsidian Card */
-.contrast-card {
-  background: #0B1210;
-  color: #F8FAFC;
-  border: 1px solid rgba(52, 211, 153, 0.16);
-  box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.5);
+[data-theme="light"] .text-\[\#94A3A8\],
+[data-theme="light"] .text-obsidian-400,
+[data-theme="light"] .text-navy-400 {
+  color: var(--text-secondary) !important;
 }
 
-/* Ambient Radial Emerald Glow */
-.liquid-ambient-glow {
-  background: radial-gradient(circle at 50% 10%, rgba(5, 150, 105, 0.12) 0%, rgba(52, 211, 153, 0.04) 50%, transparent 80%);
+[data-theme="light"] .border-emerald-500\/10,
+[data-theme="light"] .border-emerald-500\/15,
+[data-theme="light"] .border-emerald-500\/20,
+[data-theme="light"] .border-emerald-500\/25,
+[data-theme="light"] .border-emerald-500\/30,
+[data-theme="light"] .border-white\/\[0\.06\],
+[data-theme="light"] .border-white\/\[0\.08\],
+[data-theme="light"] .border-white\/10 {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Input, Forms and Modal Theme Overrides */
+.auth-input {
+  background-color: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-input:focus {
+  border-color: var(--accent-bright) !important;
+  box-shadow: 0 0 0 1px var(--accent-bright), 0 0 12px -2px var(--accent-ring) !important;
+}
+
+[data-theme="light"] .auth-input::placeholder {
+  color: #94A3B8 !important;
+}
+
+[data-theme="light"] .auth-glass-panel {
+  background-color: var(--bg-surface) !important;
+  border-color: var(--border-subtle) !important;
 }
 
 /* ==========================================================================
-   EMERALD DESIGN SYSTEM THEME RULES & OVERRIDES
-   Ensures dropdowns, mobile menus, and cards maintain dark emerald consistency
+   DYNAMIC ACCENT & SURFACE OVERRIDES FOR PURPLE, GOLD, AND ORANGE
+   Injects theme-specific palette into primary actions, highlights, and borders
    ========================================================================== */
 
-/* Mobile menu, dropdowns, and cards always preserve dark emerald styling */
-#more-dropdown-menu,
-.mobile-nav-drawer,
-header,
-main,
-.contrast-card {
-  color: #F8FAFC;
+/* PURPLE THEME OVERRIDES */
+[data-theme="purple"] .bg-\[\#059669\],
+[data-theme="purple"] .bg-emerald-600 {
+  background-color: var(--accent-primary) !important;
+}
+[data-theme="purple"] .hover\:bg-\[\#047857\]:hover,
+[data-theme="purple"] .hover\:bg-emerald-700:hover {
+  background-color: var(--accent-hover) !important;
+}
+[data-theme="purple"] .text-\[\#34D399\],
+[data-theme="purple"] .text-emerald-400 {
+  color: var(--accent-bright) !important;
+}
+[data-theme="purple"] .text-\[\#059669\],
+[data-theme="purple"] .text-emerald-600 {
+  color: var(--accent-primary) !important;
+}
+[data-theme="purple"] .border-\[\#34D399\],
+[data-theme="purple"] .border-emerald-400 {
+  border-color: var(--accent-bright) !important;
+}
+[data-theme="purple"] .border-emerald-500\/15,
+[data-theme="purple"] .border-emerald-500\/20,
+[data-theme="purple"] .border-emerald-500\/25,
+[data-theme="purple"] .border-emerald-500\/30 {
+  border-color: var(--border-subtle) !important;
+}
+[data-theme="purple"] .bg-\[\#0B1210\],
+[data-theme="purple"] .bg-\[\#050807\],
+[data-theme="purple"] .bg-\[\#131F1B\],
+[data-theme="purple"] .bg-\[\#182A24\],
+[data-theme="purple"] .bg-\[\#0E1424\],
+[data-theme="purple"] .bg-\[\#121A2F\] {
+  background-color: var(--bg-elevated) !important;
 }
 
-/* Accent highlights */
-.text-emerald-primary {
-  color: #059669;
+/* GOLD THEME OVERRIDES */
+[data-theme="gold"] .bg-\[\#059669\],
+[data-theme="gold"] .bg-emerald-600 {
+  background-color: var(--accent-primary) !important;
+}
+[data-theme="gold"] .hover\:bg-\[\#047857\]:hover,
+[data-theme="gold"] .hover\:bg-emerald-700:hover {
+  background-color: var(--accent-hover) !important;
+}
+[data-theme="gold"] .text-\[\#34D399\],
+[data-theme="gold"] .text-emerald-400 {
+  color: var(--accent-bright) !important;
+}
+[data-theme="gold"] .text-\[\#059669\],
+[data-theme="gold"] .text-emerald-600 {
+  color: var(--accent-primary) !important;
+}
+[data-theme="gold"] .border-\[\#34D399\],
+[data-theme="gold"] .border-emerald-400 {
+  border-color: var(--accent-bright) !important;
+}
+[data-theme="gold"] .border-emerald-500\/15,
+[data-theme="gold"] .border-emerald-500\/20,
+[data-theme="gold"] .border-emerald-500\/25,
+[data-theme="gold"] .border-emerald-500\/30 {
+  border-color: var(--border-subtle) !important;
+}
+[data-theme="gold"] .bg-\[\#0B1210\],
+[data-theme="gold"] .bg-\[\#050807\],
+[data-theme="gold"] .bg-\[\#131F1B\],
+[data-theme="gold"] .bg-\[\#182A24\],
+[data-theme="gold"] .bg-\[\#0E1424\],
+[data-theme="gold"] .bg-\[\#121A2F\] {
+  background-color: var(--bg-elevated) !important;
 }
 
-.text-emerald-bright {
-  color: #34D399;
+/* ORANGE THEME OVERRIDES */
+[data-theme="orange"] .bg-\[\#059669\],
+[data-theme="orange"] .bg-emerald-600 {
+  background-color: var(--accent-primary) !important;
 }
-
-.text-emerald-mint {
-  color: #A7F3D0;
+[data-theme="orange"] .hover\:bg-\[\#047857\]:hover,
+[data-theme="orange"] .hover\:bg-emerald-700:hover {
+  background-color: var(--accent-hover) !important;
 }
-
-.bg-emerald-primary {
-  background-color: #059669;
+[data-theme="orange"] .text-\[\#34D399\],
+[data-theme="orange"] .text-emerald-400 {
+  color: var(--accent-bright) !important;
 }
-
-.bg-obsidian-card {
-  background-color: #0B1210;
+[data-theme="orange"] .text-\[\#059669\],
+[data-theme="orange"] .text-emerald-600 {
+  color: var(--accent-primary) !important;
 }
-
-.border-emerald-subtle {
-  border-color: rgba(52, 211, 153, 0.14);
+[data-theme="orange"] .border-\[\#34D399\],
+[data-theme="orange"] .border-emerald-400 {
+  border-color: var(--accent-bright) !important;
+}
+[data-theme="orange"] .border-emerald-500\/15,
+[data-theme="orange"] .border-emerald-500\/20,
+[data-theme="orange"] .border-emerald-500\/25,
+[data-theme="orange"] .border-emerald-500\/30 {
+  border-color: var(--border-subtle) !important;
+}
+[data-theme="orange"] .bg-\[\#0B1210\],
+[data-theme="orange"] .bg-\[\#050807\],
+[data-theme="orange"] .bg-\[\#131F1B\],
+[data-theme="orange"] .bg-\[\#182A24\],
+[data-theme="orange"] .bg-\[\#0E1424\],
+[data-theme="orange"] .bg-\[\#121A2F\] {
+  background-color: var(--bg-elevated) !important;
 }
 
 /* ==========================================================================
-   HIRENOVA PREMIUM MICRO-ANIMATIONS (150-250ms)
-   Subtle, natural, high-performance CSS animations & transitions
+   HIRENOVA MICRO-ANIMATIONS (150-250ms)
    ========================================================================== */
-
-/* 1. Smooth Page Transition */
 @keyframes pageEnter {
   from {
     opacity: 0;
@@ -183,7 +494,6 @@ main,
   will-change: opacity, transform;
 }
 
-/* 2. Modal Open / Close Transitions */
 @keyframes modalBackdropFade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -209,7 +519,6 @@ main,
   will-change: opacity, transform;
 }
 
-/* 3. Dropdowns & Popovers */
 @keyframes dropdownFade {
   from {
     opacity: 0;
@@ -227,42 +536,6 @@ main,
   will-change: opacity, transform;
 }
 
-/* Toast / Alert Notification Transition */
-@keyframes toastSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-toast {
-  animation: toastSlideIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
-}
-
-/* 4. Candidate Ranking Row Subtle Stagger */
-@keyframes rowStagger {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-row-enter {
-  animation: rowStagger 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: calc(var(--row-index, 0) * 25ms);
-  animation-fill-mode: both;
-}
-
-/* 5. Button Tactile Hover and Press Feedback */
 .btn-interactive {
   transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
               background-color 140ms ease,
@@ -280,7 +553,6 @@ main,
   transform: translateY(1px) scale(0.985);
 }
 
-/* 6. Card Hover with Subtle Elevation */
 .card-interactive {
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -297,47 +569,6 @@ html.light .card-interactive:hover {
   box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.08);
 }
 
-/* 7. Resume Drag & Drop Interaction */
-.dropzone-container {
-  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.dropzone-container.is-dragging {
-  border-color: #34D399 !important;
-  background-color: rgba(5, 150, 105, 0.08) !important;
-  transform: scale(1.008);
-  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.4);
-}
-
-/* 8. Screening & File Upload Progress Animation */
-@keyframes progressStripe {
-  from { background-position: 1rem 0; }
-  to { background-position: 0 0; }
-}
-
-.animate-progress-stripe {
-  background-size: 1rem 1rem;
-  background-image: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.18) 25%,
-    transparent 25%,
-    transparent 50%,
-    rgba(255, 255, 255, 0.18) 50%,
-    rgba(255, 255, 255, 0.18) 75%,
-    transparent 75%,
-    transparent
-  );
-  animation: progressStripe 0.9s linear infinite;
-}
-
-/* 9. Smooth Dark/Light Mode Surface Transitions */
-html, body, header, aside, main, nav,
-.bg-navy-950, .bg-navy-900, .bg-navy-850, .bg-navy-800,
-div[class*="bg-white"], div[class*="bg-[#0"] {
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-}
-
-/* 10. Respect User Accessibility Preferences (prefers-reduced-motion) */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;
@@ -346,62 +577,3 @@ div[class*="bg-white"], div[class*="bg-[#0"] {
     scroll-behavior: auto !important;
   }
 }
-
-/* ==========================================================================
-   HIRENOVA 3D H-LOGO & ATMOSPHERIC ANIMATIONS (Reference Images 4 & 5)
-   ========================================================================== */
-@keyframes hLogoFloatRotate {
-  0% {
-    transform: perspective(900px) rotateY(-14deg) rotateX(6deg) translateY(0px);
-  }
-  50% {
-    transform: perspective(900px) rotateY(14deg) rotateX(-5deg) translateY(-8px);
-  }
-  100% {
-    transform: perspective(900px) rotateY(-14deg) rotateX(6deg) translateY(0px);
-  }
-}
-
-@keyframes atmosphericPulse {
-  0%, 100% {
-    opacity: 0.35;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.65;
-    transform: scale(1.06);
-  }
-}
-
-.animate-h-logo-3d {
-  animation: hLogoFloatRotate 8s ease-in-out infinite;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.animate-atmospheric-pulse {
-  animation: atmosphericPulse 7s ease-in-out infinite;
-  will-change: opacity, transform;
-}
-
-.auth-glass-panel {
-  background: rgba(11, 18, 16, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(52, 211, 153, 0.16);
-}
-
-.auth-input {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(52, 211, 153, 0.16);
-  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.auth-input:focus {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #34D399;
-  box-shadow: 0 0 0 1px #34D399, 0 0 16px -2px rgba(52, 211, 153, 0.35);
-}
-
-
-

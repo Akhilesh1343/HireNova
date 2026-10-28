@@ -5,7 +5,9 @@ import re
 import csv
 import json
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
+import hashlib
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
@@ -21,7 +23,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
 from backend.database import get_db, init_db, SessionLocal, engine
-from backend.models.db_models import User, Candidate, JobDescription, ScreeningResult, ActivityLog, SystemSetting, Interview
+from backend.models.db_models import User, Candidate, JobDescription, ScreeningResult, ActivityLog, SystemSetting, Interview, PasswordResetToken
+from backend.services.email_service import send_password_reset_email
 from backend.models.schemas import (
     ScreenResumeResponse,
     BatchScreenResumeResponse,
@@ -35,8 +38,12 @@ from backend.models.schemas import (
     UserLoginRequest,
     ForgotPasswordRequest,
     ForgotPasswordResponse,
+    VerifyResetTokenResponse,
     ResetPasswordRequest,
     ResetPasswordResponse,
+    OAuthConfigResponse,
+    OAuthUrlResponse,
+    OAuthLoginRequest,
     TokenResponse,
     UserResponse,
     UpdateUserRoleRequest,
@@ -562,17 +569,89 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
     clean_email = payload.email.lower().strip()
     user = db.query(User).filter(User.email == clean_email).first()
 
-    # Create signed reset token only if account exists
-    reset_token = None
-    if user:
-        reset_token = create_password_reset_token(user.email)
-        print(f"[AUTH DEV] Password reset token generated for '{user.email}': {reset_token}")
+    if user and user.is_active:
+        # Invalidate any prior unused tokens for this user
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.used == False
+        ).update({"used": True})
 
-    # Standard security practice: return identical message to prevent email enumeration
+        # Generate cryptographically secure random single-use reset token
+        raw_token = secrets.token_urlsafe(32)
+        # Store only SHA-256 hash in database
+        token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+        expires_at = datetime.utcnow() + timedelta(minutes=20)
+
+        reset_record = PasswordResetToken(
+            user_id=user.id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            used=False
+        )
+        db.add(reset_record)
+        db.commit()
+
+        # Build reset URL using configured FRONTEND_BASE_URL (never untrusted request Host header)
+        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+        reset_url = f"{frontend_base_url}/?reset_token={raw_token}#reset-password"
+
+        # Dispatch reset email via SMTP or configured email provider
+        send_password_reset_email(user.email, user.full_name, reset_url)
+
+        log_activity(db, "PASSWORD_RESET_REQUEST", user.email, user.role, "Requested password reset instructions")
+
+    # Generic response prevents email enumeration attacks
     return ForgotPasswordResponse(
         message="If an account exists for this email, you will receive password reset instructions.",
-        status="success",
-        reset_token=reset_token  # Facilitates local testing without external mail transport
+        status="success"
+    )
+
+
+@app.get(
+    "/api/auth/verify-reset-token",
+    response_model=VerifyResetTokenResponse,
+    tags=["Authentication"],
+    summary="Verify reset token validity before displaying new password form"
+)
+def verify_reset_token(token: str = Query(..., description="Raw password reset token"), db: Session = Depends(get_db)):
+    if not token or not token.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reset token is required."
+        )
+
+    token_hash = hashlib.sha256(token.strip().encode("utf-8")).hexdigest()
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
+
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link is invalid or unrecognized. Please request a new reset link."
+        )
+
+    if record.used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link has already been used. For security, reset links can only be used once."
+        )
+
+    if datetime.utcnow() > record.expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link has expired (20-minute validity limit). Please request a new reset link."
+        )
+
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User account associated with this token was not found or is inactive."
+        )
+
+    return VerifyResetTokenResponse(
+        valid=True,
+        email=user.email,
+        message="Token is valid. You may proceed to set a new password."
     )
 
 
@@ -580,7 +659,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
     "/api/auth/reset-password",
     response_model=ResetPasswordResponse,
     tags=["Authentication"],
-    summary="Reset password using valid reset token"
+    summary="Reset password using valid single-use reset token"
 )
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     if len(payload.new_password) < 8:
@@ -592,30 +671,232 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     if payload.confirm_password and payload.new_password != payload.confirm_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Passwords do not match."
+            detail="Passwords do not match. Please verify your new password entries."
         )
 
-    email = verify_password_reset_token(payload.token)
-    if not email:
+    token_hash = hashlib.sha256(payload.token.strip().encode("utf-8")).hexdigest()
+    record = db.query(PasswordResetToken).filter(PasswordResetToken.token_hash == token_hash).first()
+
+    if not record:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The password reset link is invalid or has expired. Please request a new one."
+            detail="This password reset link is invalid or unrecognized. Please request a new reset link."
         )
 
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
+    if record.used:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link has already been used. Password reset links are single-use."
+        )
+
+    if datetime.utcnow() > record.expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link has expired. Please request a new reset link."
+        )
+
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User account associated with this token was not found."
+            detail="User account associated with this token was not found or is inactive."
         )
 
+    # Hash new password with existing bcrypt utility
     user.hashed_password = hash_password(payload.new_password)
+    # Single-use invalidation
+    record.used = True
     db.commit()
 
+    log_activity(db, "PASSWORD_RESET_SUCCESS", user.email, user.role, "Password successfully reset via single-use token")
+
     return ResetPasswordResponse(
-        message="Your password has been reset successfully.",
+        message="Your password has been reset successfully. You can now sign in with your new credentials.",
         status="success"
     )
+
+
+# =========================================================================
+# OAUTH AUTHENTICATION ENDPOINTS (Google & Apple)
+# =========================================================================
+
+@app.get(
+    "/api/auth/oauth/config",
+    response_model=OAuthConfigResponse,
+    tags=["Authentication"],
+    summary="Check status of configured social login OAuth providers"
+)
+def get_oauth_config():
+    google_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    apple_id = os.getenv("APPLE_CLIENT_ID", "").strip()
+    return OAuthConfigResponse(
+        google_enabled=bool(google_id),
+        apple_enabled=bool(apple_id)
+    )
+
+
+@app.get(
+    "/api/auth/oauth/{provider}/url",
+    response_model=OAuthUrlResponse,
+    tags=["Authentication"],
+    summary="Generate OAuth authorization URL for Google or Apple"
+)
+def get_oauth_url(provider: str):
+    prov = provider.lower().strip()
+    frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+
+    if prov == "google":
+        client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google Sign-In is not configured yet on this server. To enable real Google authentication, please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env."
+            )
+        redirect_uri = f"{frontend_base_url}/api/auth/callback/google"
+        auth_url = (
+            f"https://accounts.google.com/o/oauth2/v2/auth"
+            f"?client_id={client_id}"
+            f"&redirect_uri={redirect_uri}"
+            f"&response_type=code"
+            f"&scope=openid%20email%20profile"
+            f"&access_type=online"
+            f"&prompt=select_account"
+        )
+        return OAuthUrlResponse(provider="google", auth_url=auth_url)
+
+    elif prov == "apple":
+        client_id = os.getenv("APPLE_CLIENT_ID", "").strip()
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Apple Sign-In is not configured yet on this server. To enable real Apple authentication, please set APPLE_CLIENT_ID and APPLE_TEAM_ID in backend/.env."
+            )
+        redirect_uri = f"{frontend_base_url}/api/auth/callback/apple"
+        auth_url = (
+            f"https://appleid.apple.com/auth/authorize"
+            f"?client_id={client_id}"
+            f"&redirect_uri={redirect_uri}"
+            f"&response_type=code%20id_token"
+            f"&response_mode=form_post"
+            f"&scope=name%20email"
+        )
+        return OAuthUrlResponse(provider="apple", auth_url=auth_url)
+
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported OAuth provider '{provider}'. Supported providers are 'google' and 'apple'."
+        )
+
+
+@app.post(
+    "/api/auth/oauth/{provider}",
+    response_model=TokenResponse,
+    tags=["Authentication"],
+    summary="Authenticate or register user via verified Google or Apple OAuth"
+)
+def oauth_authenticate(provider: str, payload: OAuthLoginRequest, db: Session = Depends(get_db)):
+    prov = provider.lower().strip()
+
+    if prov == "google":
+        client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+        client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+        if not client_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google Sign-In is not configured yet on this server. To enable real Google authentication, please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env."
+            )
+
+        import requests
+        email = None
+        full_name = "Google User"
+        avatar_url = None
+
+        if payload.credential:
+            res = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={payload.credential}", timeout=8)
+            if res.status_code != 200:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Google ID token.")
+            data = res.json()
+            email = data.get("email")
+            full_name = data.get("name") or data.get("given_name") or "Google User"
+            avatar_url = data.get("picture")
+        elif payload.code:
+            frontend_base = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+            redirect_uri = payload.redirect_uri or f"{frontend_base}/api/auth/callback/google"
+            token_res = requests.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": payload.code,
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code"
+                },
+                timeout=8
+            )
+            if token_res.status_code != 200:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not exchange Google auth code.")
+            token_data = token_res.json()
+            access_tok = token_data.get("access_token")
+            userinfo_res = requests.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_tok}"},
+                timeout=8
+            )
+            if userinfo_res.status_code != 200:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not retrieve Google profile.")
+            u_info = userinfo_res.json()
+            email = u_info.get("email")
+            full_name = u_info.get("name") or "Google User"
+            avatar_url = u_info.get("picture")
+
+        if not email:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not obtain verified email from Google.")
+
+        clean_email = email.lower().strip()
+        user = db.query(User).filter(User.email == clean_email).first()
+        if not user:
+            user = User(
+                email=clean_email,
+                hashed_password=hash_password(secrets.token_hex(16)),
+                full_name=full_name,
+                company_name="Organization",
+                role="recruiter",
+                avatar_url=avatar_url,
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            log_activity(db, "OAUTH_REGISTER", user.email, user.role, "Registered via Google Sign-In")
+        else:
+            if avatar_url and not user.avatar_url:
+                user.avatar_url = avatar_url
+                db.commit()
+            log_activity(db, "OAUTH_LOGIN", user.email, user.role, "Signed in via Google OAuth")
+
+        jwt_token = create_access_token({"sub": user.email})
+        return TokenResponse(
+            access_token=jwt_token,
+            token_type="bearer",
+            user=UserResponse(**user.to_dict())
+        )
+
+    elif prov == "apple":
+        apple_id = os.getenv("APPLE_CLIENT_ID", "").strip()
+        if not apple_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Apple Sign-In is not configured yet on this server. To enable real Apple authentication, please set APPLE_CLIENT_ID and APPLE_TEAM_ID in backend/.env."
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apple OAuth requires configuring APPLE_CLIENT_ID, APPLE_TEAM_ID, and APPLE_PRIVATE_KEY."
+        )
+
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unsupported OAuth provider: '{provider}'")
 
 
 @app.get(
