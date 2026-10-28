@@ -177,9 +177,9 @@ export default function ScreeningHistory({ onSelectCandidate, setCurrentTab }) {
       </div>
 
       {/* Filter Command Bar */}
-      <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-xl p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+      <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 w-full md:max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -229,7 +229,7 @@ export default function ScreeningHistory({ onSelectCandidate, setCurrentTab }) {
           </div>
 
           {/* Score Filter */}
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-navy-800">
+          <div className="flex items-center gap-2 pl-0 sm:pl-2 border-l-0 sm:border-l border-slate-200 dark:border-navy-800">
             <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
               Min Match: <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{minMatchScore}%</span>
             </span>
@@ -262,7 +262,7 @@ export default function ScreeningHistory({ onSelectCandidate, setCurrentTab }) {
       {/* Table */}
       <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950/70 text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <th className="py-3 px-5 w-36">Date</th>

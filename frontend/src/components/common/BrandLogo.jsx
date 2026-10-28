@@ -23,7 +23,7 @@ export default function BrandLogo({
   if (withContainer) {
     return (
       <div
-        className={`rounded-xl bg-white/80 dark:bg-[#0E1526]/90 border border-[#EAE7F4] dark:border-white/[0.08] p-1.5 flex items-center justify-center shadow-sm shrink-0 ${containerClassName}`}
+        className={`rounded-xl bg-[#0B1210]/90 border border-emerald-500/20 p-1.5 flex items-center justify-center shadow-sm shrink-0 ${containerClassName}`}
       >
         {imageElement}
       </div>

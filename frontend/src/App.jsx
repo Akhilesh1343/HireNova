@@ -18,6 +18,7 @@ import ActivityLogs from './pages/ActivityLogs';
 import SettingsPage from './pages/Settings';
 import LandingPage from './pages/LandingPage';
 import AccessRestricted from './components/common/AccessRestricted';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { hasPermission, getRoleDefaultTab } from './utils/rbac';
 
 function resolveTabFromUrl() {
@@ -38,18 +39,12 @@ function resolveTabFromUrl() {
   if (path.includes('/history') || hash === 'history') return 'history';
   if (hash === 'landing') return 'landing';
 
-  try {
-    const stored = localStorage.getItem('hirenova_active_tab') || localStorage.getItem('recruitx_active_tab') || localStorage.getItem('reqretx_active_tab');
-    if (stored && stored !== 'landing') return stored;
-  } catch (e) {
-    // Ignore storage errors
-  }
-
+  // Default entry point is the recruitment dashboard (publicly accessible)
   return 'dashboard';
 }
 
 function AppContent() {
-  const { user, openAuthModal } = useAuth();
+  const { user, openAuthModal, pendingTab, setPendingTab } = useAuth();
   const { isDark } = useTheme();
 
   const [currentTab, setCurrentTab] = useState(() => resolveTabFromUrl());
@@ -57,9 +52,9 @@ function AppContent() {
   const [latestAnalysisResult, setLatestAnalysisResult] = useState(null);
   const [selectedJobForScreening, setSelectedJobForScreening] = useState(null);
 
-  // Set browser title to exactly "HireNova — Next-Gen Recruitment"
+  // Set browser title to "HireNova"
   useEffect(() => {
-    document.title = 'HireNova — Next-Gen Recruitment';
+    document.title = 'HireNova';
   }, []);
 
   // Sync with browser navigation & direct URLs
@@ -90,6 +85,18 @@ function AppContent() {
     }
   };
 
+  // Redirect to requested tab after login if role allows
+  const handleLoginSuccess = (loggedInUser) => {
+    const role = loggedInUser?.role || user?.role;
+    const target = pendingTab || 'dashboard';
+    if (target && hasPermission(role, target)) {
+      handleTabChange(target);
+    } else {
+      handleTabChange('dashboard');
+    }
+    if (setPendingTab) setPendingTab(null);
+  };
+
   // When a resume screening analysis is finished, switch to candidate result tab
   const handleAnalysisComplete = (result) => {
     setLatestAnalysisResult(result);
@@ -112,7 +119,7 @@ function AppContent() {
           onLaunchApp={(targetTab) => handleTabChange(targetTab || 'dashboard')}
           onOpenAuth={openAuthModal}
         />
-        <AuthModal onLoginSuccess={() => handleTabChange('dashboard')} />
+        <AuthModal onLoginSuccess={handleLoginSuccess} />
       </div>
     );
   }
@@ -122,30 +129,45 @@ function AppContent() {
 
   // Render operational recruiter application workspace
   return (
-    <div className="min-h-screen flex flex-col bg-[#F4F3FA] dark:bg-[#070A13] text-[#1C1739] dark:text-slate-100 font-sans transition-colors duration-200 overflow-x-hidden w-full">
-      {/* Top Horizontal Navigation Bar (Reference Image 1: Peoplexio Layout) */}
-      <TopNavbar
-        currentTab={currentTab}
-        setCurrentTab={handleTabChange}
-      />
+    <div className="min-h-screen flex flex-col bg-transparent text-[#F8FAFC] font-sans transition-colors duration-200 overflow-x-hidden w-full relative selection:bg-emerald-600 selection:text-white">
+      {/* Exact Cinematic Emerald Metallic Abstract Background */}
+      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 bg-[#050807]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-95"
+          style={{ backgroundImage: `url('/emerald-background.png')` }}
+        />
+        {/* Subtle dark tint to preserve 100% card & text readability across all displays */}
+        <div className="absolute inset-0 bg-[#050807]/30 backdrop-blur-[0.5px]" />
+      </div>
+
+      {/* Top Horizontal Navigation Bar */}
+      <div className="relative z-40">
+        <TopNavbar
+          currentTab={currentTab}
+          setCurrentTab={handleTabChange}
+        />
+      </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] w-full mx-auto">
-        <div key={currentTab} className="animate-page-enter">
-          {!isAuthorized ? (
-            <AccessRestricted
-              currentRole={user?.role}
-              onBackToDashboard={() => handleTabChange('dashboard')}
-            />
-          ) : (
-            <>
-              {currentTab === 'dashboard' && (
-                <Dashboard
-                  setCurrentTab={handleTabChange}
-                  setSelectedCandidateId={handleSelectCandidate}
-                  setSelectedJobForScreening={setSelectedJobForScreening}
-                />
-              )}
+      <main className="relative z-10 flex-1 overflow-y-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-[1600px] w-full mx-auto">
+        <ErrorBoundary>
+          <div key={currentTab} className="animate-page-enter">
+            {!isAuthorized ? (
+              <AccessRestricted
+                currentRole={user?.role}
+                onBackToDashboard={() => handleTabChange('dashboard')}
+                onSignIn={() => openAuthModal('login', '', currentTab)}
+              />
+            ) : (
+              <>
+                {currentTab === 'dashboard' && (
+                  <Dashboard
+                    setCurrentTab={handleTabChange}
+                    setSelectedCandidateId={handleSelectCandidate}
+                    setSelectedJobForScreening={setSelectedJobForScreening}
+                  />
+                )}
 
                 {currentTab === 'jobs' && (
                   <JobManagement
@@ -219,10 +241,11 @@ function AppContent() {
               </>
             )}
           </div>
-        </main>
+        </ErrorBoundary>
+      </main>
 
       {/* Global Recruiter Authentication Modal */}
-      <AuthModal onLoginSuccess={() => handleTabChange('dashboard')} />
+      <AuthModal onLoginSuccess={handleLoginSuccess} />
     </div>
   );
 }

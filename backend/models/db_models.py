@@ -228,3 +228,37 @@ class ActivityLog(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
+
+class Interview(Base):
+    __tablename__ = "interviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    candidate_id = Column(String(100), index=True, nullable=False)
+    candidate_name = Column(String(255), nullable=False)
+    candidate_email = Column(String(255), nullable=True)
+    job_title = Column(String(255), nullable=False)
+    interviewer = Column(String(255), nullable=False)
+    stage = Column(String(100), default="Technical Round", nullable=False)
+    scheduled_at = Column(DateTime, nullable=False)
+    status = Column(String(50), default="Scheduled", nullable=False)
+    meeting_type = Column(String(100), default="Video Conference", nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "candidate_id": self.candidate_id,
+            "candidate_name": self.candidate_name,
+            "candidate_email": self.candidate_email,
+            "job_title": self.job_title,
+            "interviewer": self.interviewer,
+            "stage": self.stage,
+            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "status": self.status,
+            "meeting_type": self.meeting_type,
+            "notes": self.notes,
+            "created_at": self.created_at.isoformat() if self.created_at else None
+        }
+
+

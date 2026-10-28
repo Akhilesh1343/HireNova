@@ -10,7 +10,12 @@
   }
 
   body {
-    background-color: #070B14;
+    background-color: #050807;
+    background-image: url('/emerald-background.png');
+    background-repeat: no-repeat;
+    background-position: center top;
+    background-size: cover;
+    background-attachment: fixed;
     color: #F8FAFC;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -28,28 +33,28 @@
   }
 }
 
-/* Subtle architectural dark scrollbars */
+/* Subtle architectural dark scrollbars with emerald accents */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #070B14;
+  background: #050807;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1A2642;
+  background: #182A24;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #25355A;
+  background: #059669;
 }
 
-/* Clean selection tint */
+/* Clean emerald selection tint */
 ::selection {
-  background-color: #0284C7;
+  background-color: #059669;
   color: #FFFFFF;
 }
 
@@ -74,306 +79,86 @@ html .bg-navy-800 {
 .bg-subtle-grid {
   background-size: 40px 40px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-}
-
-html.light .bg-subtle-grid {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.045) 1px, transparent 1px) !important;
-}
-
-.bg-light-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, rgba(52, 211, 153, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(52, 211, 153, 0.035) 1px, transparent 1px);
 }
 
 /* ==========================================================================
-   HIRENOVA LIQUID GLASS & PEOPLEXIO DESIGN SYSTEM
+   HIRENOVA EMERALD METALLIC DESIGN SYSTEM (Prompt Specifications)
+   Main background: #050807 | Card: #0B1210 | Primary: #059669
+   Bright: #34D399 | Mint: #A7F3D0 | Text: #F8FAFC | Secondary: #94A3A8
    ========================================================================== */
 
 :root {
-  --peoplexio-bg: #F4F3FA;
-  --peoplexio-card: #FFFFFF;
-  --peoplexio-border: #EAE7F4;
-  --peoplexio-primary: #5B47E0;
-  --peoplexio-text: #1C1739;
-  --peoplexio-muted: #736B92;
-  --peoplexio-contrast-card: #1C1739;
+  --hirenova-bg: #050807;
+  --hirenova-card: #0B1210;
+  --hirenova-border: rgba(52, 211, 153, 0.12);
+  --hirenova-primary: #059669;
+  --hirenova-bright: #34D399;
+  --hirenova-mint: #A7F3D0;
+  --hirenova-text: #F8FAFC;
+  --hirenova-secondary: #94A3A8;
 }
 
-html.dark {
-  --liquid-bg: #070A13;
-  --liquid-card: rgba(14, 21, 38, 0.7);
-  --liquid-border: rgba(255, 255, 255, 0.08);
-  --liquid-glow: rgba(99, 102, 241, 0.15);
-}
-
-/* Glass Panel */
+/* Glass Panel with Obsidian-Emerald Tint */
 .glass-panel {
-  background: rgba(14, 21, 38, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 10px 30px -4px rgba(0, 0, 0, 0.4);
-}
-
-html.light .glass-panel {
-  background: #FFFFFF !important;
-  border-color: #EAE7F4 !important;
-  box-shadow: 0 10px 30px -4px rgba(91, 71, 224, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
-}
-
-/* Contrast Dark Card (Onboarding task card in Reference 1 / Glow Card in Reference 2) */
-.contrast-card {
-  background: #1C1739;
-  color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 12px 35px -5px rgba(28, 23, 57, 0.35);
-}
-
-html.dark .contrast-card {
-  background: rgba(14, 21, 38, 0.85);
+  background: rgba(11, 18, 16, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 20px 45px -10px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(52, 211, 153, 0.14);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 12px 35px -5px rgba(0, 0, 0, 0.55);
 }
 
-/* Ambient Radial Glow */
+/* Contrast Dark Obsidian Card */
+.contrast-card {
+  background: #0B1210;
+  color: #F8FAFC;
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.5);
+}
+
+/* Ambient Radial Emerald Glow */
 .liquid-ambient-glow {
-  background: radial-gradient(circle at 50% 10%, rgba(91, 71, 224, 0.08) 0%, rgba(79, 209, 255, 0.03) 50%, transparent 80%);
-}
-
-html.light .liquid-ambient-glow {
-  background: radial-gradient(circle at 50% 5%, rgba(91, 71, 224, 0.05) 0%, transparent 70%) !important;
+  background: radial-gradient(circle at 50% 10%, rgba(5, 150, 105, 0.12) 0%, rgba(52, 211, 153, 0.04) 50%, transparent 80%);
 }
 
 /* ==========================================================================
-   HIRENOVA BESPOKE LIGHT MODE DESIGN SYSTEM (html.light)
-   High contrast, professional typography, crisp cards & enterprise borders
+   EMERALD DESIGN SYSTEM THEME RULES & OVERRIDES
+   Ensures dropdowns, mobile menus, and cards maintain dark emerald consistency
    ========================================================================== */
 
-html.light body {
-  background-color: #F4F3FA !important;
-  color: #1C1739 !important;
+/* Mobile menu, dropdowns, and cards always preserve dark emerald styling */
+#more-dropdown-menu,
+.mobile-nav-drawer,
+header,
+main,
+.contrast-card {
+  color: #F8FAFC;
 }
 
-/* Scrollbars in Light Mode */
-html.light ::-webkit-scrollbar-track {
-  background: #F8FAFC;
+/* Accent highlights */
+.text-emerald-primary {
+  color: #059669;
 }
 
-html.light ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+.text-emerald-bright {
+  color: #34D399;
 }
 
-html.light ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+.text-emerald-mint {
+  color: #A7F3D0;
 }
 
-/* Light Mode Backgrounds */
-html.light .bg-navy-950 {
-  background-color: #FFFFFF !important;
+.bg-emerald-primary {
+  background-color: #059669;
 }
 
-html.light .bg-navy-900,
-html.light .bg-navy-900\/90,
-html.light .bg-navy-900\/80,
-html.light .bg-navy-900\/70,
-html.light .bg-navy-900\/60,
-html.light .bg-navy-900\/50,
-html.light .bg-navy-900\/40 {
-  background-color: #FFFFFF !important;
+.bg-obsidian-card {
+  background-color: #0B1210;
 }
 
-html.light .bg-navy-950\/90,
-html.light .bg-navy-950\/80,
-html.light .bg-navy-950\/70,
-html.light .bg-navy-950\/60,
-html.light .bg-navy-950\/50,
-html.light .bg-navy-950\/40,
-html.light .bg-navy-950\/30 {
-  background-color: #F8FAFC !important;
-}
-
-html.light .bg-navy-850,
-html.light .bg-navy-850\/60,
-html.light .bg-navy-850\/80,
-html.light .bg-navy-800,
-html.light .bg-navy-800\/80,
-html.light .bg-navy-750 {
-  background-color: #F1F5F9 !important;
-}
-
-/* Light Mode Borders & Dividers */
-html.light .border-navy-800,
-html.light .border-navy-800\/60,
-html.light .border-navy-800\/80,
-html.light .border-navy-700,
-html.light .border-navy-700\/60,
-html.light .border-navy-700\/80 {
-  border-color: #E2E8F0 !important;
-}
-
-html.light .border-navy-600 {
-  border-color: #CBD5E1 !important;
-}
-
-html.light .divide-navy-800 > * + *,
-html.light .divide-navy-800 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #E2E8F0 !important;
-}
-
-/* Light Mode Card Shadows */
-html.light .shadow-card-dark {
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04) !important;
-  border-color: #E2E8F0 !important;
-}
-
-html.light .shadow-card-hover:hover {
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04) !important;
-}
-
-/* Light Mode Text Hierarchy */
-html.light .text-white:not(button.bg-cyan-400):not(button.bg-cyan-500):not(button[class*="bg-gradient"]):not(button[class*="bg-gradient"] *):not(.bg-cyan-400 *):not(.badge-text) {
-  color: #0F172A !important;
-}
-
-html.light .text-slate-100,
-html.light .text-slate-200 {
-  color: #1E293B !important;
-}
-
-html.light .text-slate-300,
-html.light .text-navy-300 {
-  color: #334155 !important;
-}
-
-html.light .text-slate-400,
-html.light .text-navy-400 {
-  color: #64748B !important;
-}
-
-html.light .text-slate-500,
-html.light .text-navy-500 {
-  color: #94A3B8 !important;
-}
-
-/* Accent Text Legibility in Light Mode */
-html.light .text-cyan-400 {
-  color: #0284C7 !important; /* Richer sky-blue with high contrast on white */
-}
-
-html.light .text-cyan-300 {
-  color: #0369A1 !important;
-}
-
-html.light .text-violet-400 {
-  color: #7C3AED !important;
-}
-
-html.light .text-emerald-400 {
-  color: #059669 !important;
-}
-
-html.light .text-amber-400 {
-  color: #D97706 !important;
-}
-
-/* Buttons & Active Elements */
-html.light button.bg-cyan-400,
-html.light button.bg-cyan-400 *,
-html.light .bg-cyan-400.text-navy-950,
-html.light [class*="bg-cyan-400"] span {
-  color: #04070D !important;
-}
-
-html.light button[class*="bg-gradient"],
-html.light button[class*="bg-gradient"] * {
-  color: #FFFFFF !important;
-}
-
-/* Inputs, Textareas, Selects */
-html.light input,
-html.light select,
-html.light textarea {
-  background-color: #FFFFFF !important;
-  color: #0F172A !important;
-  border-color: #CBD5E1 !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder {
-  color: #94A3B8 !important;
-}
-
-html.light input:focus,
-html.light select:focus,
-html.light textarea:focus {
-  border-color: #0284C7 !important;
-  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15) !important;
-}
-
-/* Tables in Light Mode */
-html.light table thead tr {
-  background-color: #F8FAFC !important;
-  color: #475569 !important;
-  border-color: #E2E8F0 !important;
-}
-
-html.light table tbody tr:hover {
-  background-color: #F8FAFC !important;
-}
-
-/* Badges & Chips in Light Mode */
-html.light .bg-cyan-950,
-html.light .bg-cyan-950\/40,
-html.light .bg-cyan-950\/50,
-html.light .bg-cyan-950\/60 {
-  background-color: #E0F2FE !important;
-  color: #0369A1 !important;
-  border-color: #BAE6FD !important;
-}
-
-html.light .bg-violet-950,
-html.light .bg-violet-950\/40,
-html.light .bg-violet-950\/50 {
-  background-color: #EDE9FE !important;
-  color: #6D28D9 !important;
-  border-color: #DDD6FE !important;
-}
-
-html.light .bg-orange-950,
-html.light .bg-orange-950\/40,
-html.light .bg-orange-950\/50 {
-  background-color: #FFEDD5 !important;
-  color: #C2410C !important;
-  border-color: #FED7AA !important;
-}
-
-html.light .bg-red-950,
-html.light .bg-red-950\/30,
-html.light .bg-red-950\/40,
-html.light .bg-red-950\/60 {
-  background-color: #FEE2E2 !important;
-  color: #B91C1C !important;
-  border-color: #FECACA !important;
-}
-
-/* Modals & Backdrop in Light Mode */
-html.light .bg-navy-950\/80 {
-  background-color: rgba(15, 23, 42, 0.45) !important;
-}
-
-html.light .bg-navy-900.border-navy-700 {
-  background-color: #FFFFFF !important;
-  border-color: #E2E8F0 !important;
-  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05) !important;
+.border-emerald-subtle {
+  border-color: rgba(52, 211, 153, 0.14);
 }
 
 /* ==========================================================================
@@ -518,14 +303,10 @@ html.light .card-interactive:hover {
 }
 
 .dropzone-container.is-dragging {
-  border-color: #6366F1 !important;
-  background-color: rgba(99, 102, 241, 0.05) !important;
+  border-color: #34D399 !important;
+  background-color: rgba(5, 150, 105, 0.08) !important;
   transform: scale(1.008);
-}
-
-html.dark .dropzone-container.is-dragging {
-  background-color: rgba(99, 102, 241, 0.1) !important;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.4);
 }
 
 /* 8. Screening & File Upload Progress Animation */
@@ -565,5 +346,62 @@ div[class*="bg-white"], div[class*="bg-[#0"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   HIRENOVA 3D H-LOGO & ATMOSPHERIC ANIMATIONS (Reference Images 4 & 5)
+   ========================================================================== */
+@keyframes hLogoFloatRotate {
+  0% {
+    transform: perspective(900px) rotateY(-14deg) rotateX(6deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(900px) rotateY(14deg) rotateX(-5deg) translateY(-8px);
+  }
+  100% {
+    transform: perspective(900px) rotateY(-14deg) rotateX(6deg) translateY(0px);
+  }
+}
+
+@keyframes atmosphericPulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.06);
+  }
+}
+
+.animate-h-logo-3d {
+  animation: hLogoFloatRotate 8s ease-in-out infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.animate-atmospheric-pulse {
+  animation: atmosphericPulse 7s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.auth-glass-panel {
+  background: rgba(11, 18, 16, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(52, 211, 153, 0.16);
+}
+
+.auth-input {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-input:focus {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #34D399;
+  box-shadow: 0 0 0 1px #34D399, 0 0 16px -2px rgba(52, 211, 153, 0.35);
+}
+
 
 

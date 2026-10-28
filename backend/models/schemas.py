@@ -277,3 +277,63 @@ class CandidateDetailResponse(BaseModel):
     recommendation: str
     resume_preview: Optional[str] = None
     screening_history: Optional[List[ScreeningHistoryItem]] = None
+
+
+class InterviewCreate(BaseModel):
+    candidate_id: str
+    candidate_name: str
+    candidate_email: Optional[str] = None
+    job_title: str
+    interviewer: str
+    stage: str = "Technical Round"
+    scheduled_at: str
+    status: Optional[str] = "Scheduled"
+    meeting_type: Optional[str] = "Video Conference"
+    notes: Optional[str] = None
+
+
+class InterviewResponse(BaseModel):
+    id: int
+    candidate_id: str
+    candidate_name: str
+    candidate_email: Optional[str] = None
+    job_title: str
+    interviewer: str
+    stage: str
+    scheduled_at: Optional[str] = None
+    status: str
+    meeting_type: str
+    notes: Optional[str] = None
+    created_at: Optional[str] = None
+
+
+class WeeklyActivityItem(BaseModel):
+    date: str
+    count: int
+    day: str
+
+
+class PublicRecentActivity(BaseModel):
+    id: int
+    job_title: str
+    category: str
+    ats_score: float
+    recommendation: str
+    created_at: Optional[str] = None
+
+
+class DashboardSummaryResponse(BaseModel):
+    total_candidates: int
+    total_jobs: int
+    total_screenings: int
+    total_shortlisted: int
+    average_ats_score: float
+    ml_engine_status: str
+    model_name: str
+    scoring_formula: Dict[str, Any]
+    weekly_activity: List[WeeklyActivityItem]
+    pipeline_stages: Dict[str, int]
+    category_distribution: List[Dict[str, Any]]
+    recent_public_activity: List[PublicRecentActivity]
+
+

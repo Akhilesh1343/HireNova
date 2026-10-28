@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
 from backend.database import get_db, init_db, SessionLocal, engine
-from backend.models.db_models import User, Candidate, JobDescription, ScreeningResult, ActivityLog, SystemSetting
+from backend.models.db_models import User, Candidate, JobDescription, ScreeningResult, ActivityLog, SystemSetting, Interview
 from backend.models.schemas import (
     ScreenResumeResponse,
     BatchScreenResumeResponse,
@@ -51,7 +51,12 @@ from backend.models.schemas import (
     ScreeningHistoryItem,
     ScreeningHistoryListResponse,
     ResumeFileItem,
-    ResumeFileListResponse
+    ResumeFileListResponse,
+    InterviewCreate,
+    InterviewResponse,
+    DashboardSummaryResponse,
+    WeeklyActivityItem,
+    PublicRecentActivity
 )
 from backend.utils.auth import (
     hash_password,
@@ -62,6 +67,7 @@ from backend.utils.auth import (
     get_current_user,
     get_optional_current_user,
     normalize_role,
+    require_roles,
     require_admin,
     require_screening_access,
     require_job_manage_access,
@@ -71,6 +77,7 @@ from backend.services.ml_service import ml_service
 from backend.services.candidate_service import candidate_service
 from backend.utils.extractor import extract_resume_text
 from backend.utils.preprocessor import preprocess_text
+
 
 
 # ==========================================
@@ -97,9 +104,9 @@ async def lifespan(app: FastAPI):
     # 3. Seed default recruiter account & default jobs if empty
     db = SessionLocal()
     try:
-        # Seed standard RBAC accounts for all 4 roles
-        admin_email = os.getenv("ADMIN_EMAIL", "admin@hirenova.com").lower().strip()
-        admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+        # Seed standard RBAC accounts for all roles
+        initial_admin_email = os.getenv("ADMIN_INITIAL_EMAIL", os.getenv("ADMIN_EMAIL", "akhilesh1343@gmail.com")).lower().strip()
+        initial_admin_password = os.getenv("ADMIN_INITIAL_PASSWORD", os.getenv("ADMIN_PASSWORD", "Admin@HireNova2026!"))
         recruiter_email = os.getenv("RECRUITER_EMAIL", "recruiter@hirenova.com").lower().strip()
         recruiter_password = os.getenv("RECRUITER_PASSWORD", "recruiter123")
         manager_email = os.getenv("HIRING_MANAGER_EMAIL", "manager@hirenova.com").lower().strip()
@@ -109,8 +116,15 @@ async def lifespan(app: FastAPI):
 
         seed_accounts = [
             {
-                "email": admin_email,
-                "password": admin_password,
+                "email": initial_admin_email,
+                "password": initial_admin_password,
+                "full_name": "System Administrator",
+                "role": "admin",
+                "company_name": "HireNova Enterprise"
+            },
+            {
+                "email": "admin@hirenova.com",
+                "password": "admin123",
                 "full_name": "System Administrator",
                 "role": "admin",
                 "company_name": "HireNova Enterprise"
@@ -182,22 +196,17 @@ async def lifespan(app: FastAPI):
                 db.commit()
                 print(f"[Database] Seeded {acc['role']} account: {acc['email']}")
             else:
-                # Ensure existing user has correct canonical role & active status
-                existing_user.role = acc["role"]
-                existing_user.company_name = acc["company_name"]
+                # Ensure existing user has correct role & active status without clobbering existing passwords
+                if existing_user.role != acc["role"]:
+                    existing_user.role = acc["role"]
+                if acc.get("company_name") and not existing_user.company_name:
+                    existing_user.company_name = acc["company_name"]
                 existing_user.is_active = True
-                if not verify_password(acc["password"], existing_user.hashed_password):
-                    existing_user.hashed_password = hash_password(acc["password"])
                 db.commit()
-                print(f"[Database] Synchronized {acc['role']} account: {acc['email']}")
-
-        # Ensure akhilesh1343@gmail.com retains Admin role (without touching password)
-        user_akhil = db.query(User).filter(User.email == "akhilesh1343@gmail.com").first()
-        if user_akhil and user_akhil.role != "admin":
-            user_akhil.role = "admin"
-            db.commit()
+                print(f"[Database] Verified {acc['role']} account: {acc['email']}")
 
         admin = db.query(User).filter(User.role == "admin").first()
+
 
         # Seed sample job descriptions if empty
         if db.query(JobDescription).count() == 0:
@@ -273,6 +282,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -312,8 +322,124 @@ def health_check(db: Session = Depends(get_db)):
 
 
 # ==========================================
+# PUBLIC DASHBOARD SUMMARY (Unauthenticated)
+# ==========================================
+
+@app.get(
+    "/api/dashboard/summary",
+    response_model=DashboardSummaryResponse,
+    tags=["Dashboard"],
+    summary="Public aggregate dashboard metrics and non-sensitive recruitment statistics"
+)
+def get_dashboard_summary(db: Session = Depends(get_db)):
+    # 1. Total candidates in database or corpus
+    db_cands = db.query(Candidate).count()
+    corpus_count = len(candidate_service.df_candidates) if candidate_service.df_candidates is not None else 0
+    total_candidates = db_cands if db_cands > 0 else corpus_count
+
+    # 2. Total active jobs
+    total_jobs = db.query(JobDescription).count()
+
+    # 3. Total screenings recorded
+    total_screenings = db.query(ScreeningResult).count()
+
+    # 4. Total shortlisted candidates
+    db_shortlisted = db.query(ScreeningResult).filter(ScreeningResult.ats_score >= 50.0).count()
+    if db_shortlisted == 0 and db_cands > 0:
+        db_shortlisted = db.query(Candidate).filter(Candidate.ats_score >= 50.0).count()
+    if db_shortlisted == 0 and candidate_service.df_shortlisted is not None and not candidate_service.df_shortlisted.empty:
+        db_shortlisted = len(candidate_service.df_shortlisted)
+    total_shortlisted = db_shortlisted
+
+    # 5. Average ATS score
+    avg_score = db.query(func.avg(ScreeningResult.ats_score)).scalar()
+    if avg_score is None:
+        if db_cands > 0:
+            avg_score = db.query(func.avg(Candidate.ats_score)).scalar()
+        elif candidate_service.df_candidates is not None and not candidate_service.df_candidates.empty:
+            avg_score = float(candidate_service.df_candidates["ATS_Score"].mean())
+    average_ats = round(float(avg_score), 1) if avg_score is not None else 0.0
+
+    # 6. Weekly screening activity (genuine counts for past 7 days)
+    from datetime import date, timedelta
+    today = date.today()
+    days_abbr = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    weekly = []
+    for i in range(6, -1, -1):
+        day_date = today - timedelta(days=i)
+        day_str = day_date.strftime("%Y-%m-%d")
+        count = db.query(ScreeningResult).filter(
+            func.date(ScreeningResult.created_at) == day_str
+        ).count()
+        weekly.append(WeeklyActivityItem(
+            date=day_str,
+            count=count,
+            day=days_abbr[day_date.weekday()]
+        ))
+
+    # 7. Pipeline stages
+    interview_count = db.query(Interview).count()
+    pipeline_stages = {
+        "applied": total_candidates,
+        "screened": total_screenings,
+        "shortlisted": total_shortlisted,
+        "interviewed": interview_count
+    }
+
+    # 8. Category distribution (top 5 non-sensitive)
+    cat_counts = (
+        db.query(ScreeningResult.predicted_category, func.count(ScreeningResult.id))
+        .group_by(ScreeningResult.predicted_category)
+        .order_by(desc(func.count(ScreeningResult.id)))
+        .limit(5)
+        .all()
+    )
+    categories = []
+    if cat_counts:
+        categories = [{"name": c[0] or "General", "count": c[1]} for c in cat_counts if c[0]]
+    elif candidate_service.df_candidates is not None and not candidate_service.df_candidates.empty:
+        top_cats = candidate_service.df_candidates["Category"].value_counts().head(5)
+        categories = [{"name": cat, "count": int(cnt)} for cat, cnt in top_cats.items()]
+
+    # 9. Recent non-sensitive activity (NO personal candidate info or contact details)
+    recent_screenings = db.query(ScreeningResult).order_by(desc(ScreeningResult.created_at)).limit(5).all()
+    public_recent = [
+        PublicRecentActivity(
+            id=s.id,
+            job_title=s.job_title or "Role Evaluation",
+            category=s.predicted_category or "Technical",
+            ats_score=round(s.ats_score, 1),
+            recommendation=s.recommendation or "Evaluated",
+            created_at=s.created_at.isoformat() if s.created_at else None
+        )
+        for s in recent_screenings
+    ]
+
+    return DashboardSummaryResponse(
+        total_candidates=total_candidates,
+        total_jobs=total_jobs,
+        total_screenings=total_screenings,
+        total_shortlisted=total_shortlisted,
+        average_ats_score=average_ats,
+        ml_engine_status="online" if ml_service.model is not None else "offline",
+        model_name="LinearSVC + TF-IDF",
+        scoring_formula={
+            "similarity_weight": 40,
+            "skill_weight": 60,
+            "threshold": 50,
+            "formula_text": "40% JD Similarity + 60% Skill Match"
+        },
+        weekly_activity=weekly,
+        pipeline_stages=pipeline_stages,
+        category_distribution=categories,
+        recent_public_activity=public_recent
+    )
+
+
+# ==========================================
 # AUDIT LOGGING HELPER
 # ==========================================
+
 
 def log_activity(db: Session, action: str, user_email: str, user_role: str, details: str = None, ip_address: str = None):
     """Write an immutable audit log record to activity_logs table."""
@@ -679,7 +805,10 @@ def update_preferences(
     tags=["Job Descriptions"],
     summary="List all saved job descriptions"
 )
-def list_jobs(db: Session = Depends(get_db)):
+def list_jobs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     jobs = db.query(JobDescription).order_by(desc(JobDescription.created_at)).all()
     return [JobDescriptionResponse(**j.to_dict()) for j in jobs]
 
@@ -716,11 +845,16 @@ def create_job(
     tags=["Job Descriptions"],
     summary="Get a single job description by ID"
 )
-def get_job(job_id: int, db: Session = Depends(get_db)):
+def get_job(
+    job_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     job = db.query(JobDescription).filter(JobDescription.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job description not found.")
     return JobDescriptionResponse(**job.to_dict())
+
 
 
 @app.put(
@@ -791,18 +925,9 @@ async def screen_resume_endpoint(
     job_title: Optional[str] = Form(None, description="Optional job title designation"),
     job_description_id: Optional[int] = Form(None, description="Optional linked job description ID"),
     candidate_name: Optional[str] = Form(None, description="Optional candidate name"),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(require_screening_access),
     db: Session = Depends(get_db)
 ):
-    # RBAC Authorization: Only Recruiter and Admin roles can screen resumes
-    if current_user:
-        user_role = normalize_role(current_user.role)
-        if user_role not in ["admin", "recruiter"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access forbidden. Resume screening is restricted to Recruiters and Admins. Your current role is '{current_user.role}'."
-            )
-
     # 1. Validate Job Description
     if not job_description or not job_description.strip():
         raise HTTPException(
@@ -975,18 +1100,9 @@ async def screen_resumes_batch_endpoint(
     required_skills: Optional[str] = Form(None, description="Optional custom comma-separated or JSON list of required skills"),
     job_title: Optional[str] = Form(None, description="Optional job title designation"),
     job_description_id: Optional[int] = Form(None, description="Optional linked job description ID"),
-    current_user: Optional[User] = Depends(get_optional_current_user),
+    current_user: User = Depends(require_screening_access),
     db: Session = Depends(get_db)
 ):
-    # RBAC Authorization: Only Recruiter and Admin roles can screen resumes
-    if current_user:
-        user_role = normalize_role(current_user.role)
-        if user_role not in ["admin", "recruiter"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access forbidden. Resume screening is restricted to Recruiters and Admins. Your current role is '{current_user.role}'."
-            )
-
     if not job_description or not job_description.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1156,6 +1272,7 @@ def get_screening_history(
     min_ats: float = Query(0.0, ge=0.0, le=100.0),
     sort_by: str = Query("created_at"),
     sort_order: str = Query("desc"),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     query = db.query(ScreeningResult)
@@ -1211,7 +1328,11 @@ def get_screening_history(
     tags=["Screening History"],
     summary="Get single screening history detail"
 )
-def get_screening_detail(screening_id: int, db: Session = Depends(get_db)):
+def get_screening_detail(
+    screening_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     rec = db.query(ScreeningResult).filter(ScreeningResult.id == screening_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Screening record not found.")
@@ -1222,9 +1343,13 @@ def get_screening_detail(screening_id: int, db: Session = Depends(get_db)):
     "/api/screenings/{screening_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=["Screening History"],
-    summary="Delete a screening record"
+    summary="Delete a screening record (Recruiter & Admin only)"
 )
-def delete_screening_record(screening_id: int, db: Session = Depends(get_db)):
+def delete_screening_record(
+    screening_id: int,
+    current_user: User = Depends(require_screening_access),
+    db: Session = Depends(get_db)
+):
     rec = db.query(ScreeningResult).filter(ScreeningResult.id == screening_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Screening record not found.")
@@ -1239,7 +1364,10 @@ def delete_screening_record(screening_id: int, db: Session = Depends(get_db)):
     tags=["Resume Management"],
     summary="List previously screened resumes with file metadata"
 )
-def list_screened_resumes(db: Session = Depends(get_db)):
+def list_screened_resumes(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     screenings = db.query(ScreeningResult).order_by(desc(ScreeningResult.created_at)).limit(100).all()
     items = []
     for s in screenings:
@@ -1255,6 +1383,7 @@ def list_screened_resumes(db: Session = Depends(get_db)):
             upload_date=s.created_at.isoformat() if s.created_at else None
         ))
     return ResumeFileListResponse(total=len(items), resumes=items)
+
 
 
 def find_resume_file_or_data(candidate_id: str, db: Session):
@@ -1306,7 +1435,11 @@ def find_resume_file_or_data(candidate_id: str, db: Session):
     tags=["Resume Management"],
     summary="View candidate resume inline in browser"
 )
-def view_candidate_resume(candidate_id: str, db: Session = Depends(get_db)):
+def view_candidate_resume(
+    candidate_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     data, filename, media = find_resume_file_or_data(candidate_id, db)
     if not data:
         raise HTTPException(status_code=404, detail="Resume file not found.")
@@ -1322,7 +1455,11 @@ def view_candidate_resume(candidate_id: str, db: Session = Depends(get_db)):
     tags=["Resume Management"],
     summary="Download candidate resume file"
 )
-def download_candidate_resume(candidate_id: str, db: Session = Depends(get_db)):
+def download_candidate_resume(
+    candidate_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     data, filename, media = find_resume_file_or_data(candidate_id, db)
     if not data:
         raise HTTPException(status_code=404, detail="Resume file not found.")
@@ -1338,11 +1475,15 @@ def download_candidate_resume(candidate_id: str, db: Session = Depends(get_db)):
     tags=["Resume Management"],
     summary="View screening resume inline in browser"
 )
-def view_screening_resume(screening_id: int, db: Session = Depends(get_db)):
+def view_screening_resume(
+    screening_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     rec = db.query(ScreeningResult).filter(ScreeningResult.id == screening_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Screening record not found.")
-    return view_candidate_resume(rec.candidate_id, db)
+    return view_candidate_resume(rec.candidate_id, current_user, db)
 
 
 @app.get(
@@ -1350,19 +1491,26 @@ def view_screening_resume(screening_id: int, db: Session = Depends(get_db)):
     tags=["Resume Management"],
     summary="Download screening resume file"
 )
-def download_screening_resume(screening_id: int, db: Session = Depends(get_db)):
+def download_screening_resume(
+    screening_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     rec = db.query(ScreeningResult).filter(ScreeningResult.id == screening_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Screening record not found.")
-    return download_candidate_resume(rec.candidate_id, db)
+    return download_candidate_resume(rec.candidate_id, current_user, db)
 
 
 @app.get(
     "/api/export/json",
     tags=["Export"],
-    summary="Export all recruitment data to JSON"
+    summary="Export all recruitment data to JSON (HR Lead & Admin only)"
 )
-def export_json(db: Session = Depends(get_db)):
+def export_json(
+    current_user: User = Depends(require_analytics_access),
+    db: Session = Depends(get_db)
+):
     cands = db.query(Candidate).order_by(desc(Candidate.ats_score)).all()
     screenings = db.query(ScreeningResult).order_by(desc(ScreeningResult.created_at)).all()
     jobs = db.query(JobDescription).all()
@@ -1390,9 +1538,11 @@ def export_json(db: Session = Depends(get_db)):
 @app.get(
     "/api/export/rankings",
     tags=["Export"],
-    summary="Export candidate rankings to CSV"
+    summary="Export candidate rankings to CSV (HR Lead & Admin only)"
 )
-def export_rankings_csv():
+def export_rankings_csv(
+    current_user: User = Depends(require_analytics_access)
+):
     df = candidate_service.df_candidates
     if df is None or df.empty:
         raise HTTPException(status_code=404, detail="No candidate rankings dataset available.")
@@ -1423,9 +1573,11 @@ def export_rankings_csv():
 @app.get(
     "/api/export/shortlist",
     tags=["Export"],
-    summary="Export shortlisted candidates to CSV"
+    summary="Export shortlisted candidates to CSV (HR Lead & Admin only)"
 )
-def export_shortlist_csv():
+def export_shortlist_csv(
+    current_user: User = Depends(require_analytics_access)
+):
     df = candidate_service.df_shortlisted
     if df is None or df.empty:
         df = candidate_service.df_candidates.head(10) if candidate_service.df_candidates is not None else None
@@ -1458,9 +1610,12 @@ def export_shortlist_csv():
 @app.get(
     "/api/export/screenings",
     tags=["Export"],
-    summary="Export screening history to CSV"
+    summary="Export screening history to CSV (HR Lead & Admin only)"
 )
-def export_screenings_csv(db: Session = Depends(get_db)):
+def export_screenings_csv(
+    current_user: User = Depends(require_analytics_access),
+    db: Session = Depends(get_db)
+):
     screenings = db.query(ScreeningResult).order_by(desc(ScreeningResult.created_at)).all()
     output = io.StringIO()
     writer = csv.writer(output)
@@ -1506,7 +1661,8 @@ def list_candidates(
     search: Optional[str] = Query(None),
     min_ats: float = Query(0.0, ge=0.0, le=100.0),
     sort_by: str = Query("Rank"),
-    sort_order: str = Query("asc")
+    sort_order: str = Query("asc"),
+    current_user: User = Depends(get_current_user)
 ):
     data = candidate_service.get_candidates(
         skip=skip,
@@ -1526,7 +1682,10 @@ def list_candidates(
     tags=["Candidates"],
     summary="Get top ranked candidates"
 )
-def get_top_candidates(limit: int = Query(10, ge=1, le=50)):
+def get_top_candidates(
+    limit: int = Query(10, ge=1, le=50),
+    current_user: User = Depends(get_current_user)
+):
     items = candidate_service.get_top_candidates(limit=limit)
     return [CandidateItem(**item) for item in items]
 
@@ -1537,7 +1696,11 @@ def get_top_candidates(limit: int = Query(10, ge=1, le=50)):
     tags=["Candidates"],
     summary="Get comprehensive candidate profile by ID"
 )
-def get_candidate_detail(candidate_id: str, db: Session = Depends(get_db)):
+def get_candidate_detail(
+    candidate_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     # 1. Check if candidate exists in SQLite database
     db_cand = db.query(Candidate).filter(Candidate.candidate_id == candidate_id).first()
     screenings = db.query(ScreeningResult).filter(ScreeningResult.candidate_id == candidate_id).order_by(desc(ScreeningResult.created_at)).all()
@@ -1595,9 +1758,12 @@ def get_candidate_detail(candidate_id: str, db: Session = Depends(get_db)):
     "/api/analytics",
     response_model=AnalyticsResponse,
     tags=["Analytics"],
-    summary="Get aggregated dataset and screening analytics"
+    summary="Get aggregated dataset and screening analytics (HR Lead & Admin only)"
 )
-def get_analytics(db: Session = Depends(get_db)):
+def get_analytics(
+    current_user: User = Depends(require_analytics_access),
+    db: Session = Depends(get_db)
+):
     base_stats = candidate_service.get_analytics()
     total_screenings = db.query(ScreeningResult).count()
 
@@ -1629,7 +1795,10 @@ def get_analytics(db: Session = Depends(get_db)):
     tags=["Job Description"],
     summary="Analyze and clean target job description requirements"
 )
-def analyze_job_description(payload: AnalyzeJobRequest):
+def analyze_job_description(
+    payload: AnalyzeJobRequest,
+    current_user: User = Depends(get_current_user)
+):
     cleaned = preprocess_text(payload.job_description)
     default_skills = ml_service.get_default_skills()
     effective = payload.required_skills if payload.required_skills else default_skills
@@ -1647,11 +1816,12 @@ def analyze_job_description(payload: AnalyzeJobRequest):
     tags=["Skills"],
     summary="Get default target skills loaded from ML pipeline"
 )
-def get_skills():
+def get_skills(current_user: User = Depends(get_current_user)):
     return {
         "skills": ml_service.get_default_skills(),
         "count": len(ml_service.get_default_skills())
     }
+
 
 
 # ==========================================
@@ -1809,5 +1979,92 @@ def update_system_settings(
         "Admin updated system screening and model configuration parameters"
     )
     return SystemSettingsResponse(**current_data)
+
+
+# ==========================================
+# RECRUITMENT PIPELINE & INTERVIEWS
+# ==========================================
+
+@app.get(
+    "/api/interviews",
+    response_model=List[InterviewResponse],
+    tags=["Interviews"],
+    summary="List all scheduled interviews (Authenticated users only)"
+)
+def list_interviews(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    interviews = db.query(Interview).order_by(Interview.scheduled_at.asc()).all()
+    return [InterviewResponse(**i.to_dict()) for i in interviews]
+
+
+@app.post(
+    "/api/interviews",
+    response_model=InterviewResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Interviews"],
+    summary="Schedule a new interview (Recruiter, Hiring Manager & Admin only)"
+)
+def create_interview(
+    payload: InterviewCreate,
+    current_user: User = Depends(require_roles(["admin", "recruiter", "hiring_manager"])),
+    db: Session = Depends(get_db)
+):
+    try:
+        scheduled_dt = datetime.fromisoformat(payload.scheduled_at.replace("Z", "+00:00"))
+    except Exception:
+        scheduled_dt = datetime.utcnow()
+
+    interview = Interview(
+        candidate_id=payload.candidate_id,
+        candidate_name=payload.candidate_name,
+        candidate_email=payload.candidate_email,
+        job_title=payload.job_title,
+        interviewer=payload.interviewer,
+        stage=payload.stage or "Technical Round",
+        scheduled_at=scheduled_dt,
+        status=payload.status or "Scheduled",
+        meeting_type=payload.meeting_type or "Video Conference",
+        notes=payload.notes
+    )
+    db.add(interview)
+    db.commit()
+    db.refresh(interview)
+    log_activity(
+        db,
+        "INTERVIEW_SCHEDULED",
+        current_user.email,
+        current_user.role,
+        f"Scheduled interview for {interview.candidate_name} ({interview.job_title})"
+    )
+    return InterviewResponse(**interview.to_dict())
+
+
+@app.delete(
+    "/api/interviews/{interview_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Interviews"],
+    summary="Cancel / delete an interview (Recruiter, Hiring Manager & Admin only)"
+)
+def delete_interview(
+    interview_id: int,
+    current_user: User = Depends(require_roles(["admin", "recruiter", "hiring_manager"])),
+    db: Session = Depends(get_db)
+):
+    interview = db.query(Interview).filter(Interview.id == interview_id).first()
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found.")
+    db.delete(interview)
+    db.commit()
+    log_activity(
+        db,
+        "INTERVIEW_CANCELLED",
+        current_user.email,
+        current_user.role,
+        f"Cancelled interview ID {interview_id}"
+    )
+    return None
+
 
 

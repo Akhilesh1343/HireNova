@@ -4,9 +4,11 @@ import { RecommendationBadge } from '../components/common/Badge';
 import ResumeViewerModal from '../components/common/ResumeViewerModal';
 import AnimatedNumber from '../components/common/AnimatedNumber';
 import { fetchCandidatesApi } from '../services/screeningService';
-import { getExportShortlistUrl, getCandidateResumeDownloadUrl } from '../services/api';
+import { getExportShortlistUrl, getCandidateResumeDownloadUrl, downloadCandidateResumeFile } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Shortlist({ onSelectCandidate, setCurrentTab }) {
+  const { openAuthModal } = useAuth();
   const [candidates, setCandidates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,7 +64,7 @@ export default function Shortlist({ onSelectCandidate, setCurrentTab }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a
             href={getExportShortlistUrl()}
             download
@@ -84,7 +86,7 @@ export default function Shortlist({ onSelectCandidate, setCurrentTab }) {
 
       {/* Filter / Search Bar */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 w-full sm:max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -108,7 +110,7 @@ export default function Shortlist({ onSelectCandidate, setCurrentTab }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[700px]">
               <thead className="bg-slate-50/75 dark:bg-[#121A2F] border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-3 px-4 font-medium w-14">Rank</th>
@@ -201,14 +203,24 @@ export default function Shortlist({ onSelectCandidate, setCurrentTab }) {
                             <FileText className="w-3.5 h-3.5" />
                           </button>
 
-                          <a
-                            href={getCandidateResumeDownloadUrl(c.id)}
-                            download
-                            className="btn-interactive p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await downloadCandidateResumeFile(c.id, `Resume_${c.id}.pdf`);
+                              } catch (err) {
+                                if (err.isAuthError || err.status === 401) {
+                                  if (openAuthModal) openAuthModal('login');
+                                } else {
+                                  alert(err.message || 'Failed to download resume file.');
+                                }
+                              }
+                            }}
+                            className="btn-interactive p-1.5 text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
                             title="Download Resume"
                           >
                             <Download className="w-3.5 h-3.5" />
-                          </a>
+                          </button>
 
                           <button
                             onClick={() => onSelectCandidate(c.id)}

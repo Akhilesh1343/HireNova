@@ -314,6 +314,35 @@ export async function deleteJobApi(jobId) {
 // CANDIDATES & ANALYTICS APIS
 // ==========================================
 
+export async function getDashboardSummaryApi() {
+  const response = await fetch(`${API_BASE_URL}/dashboard/summary`);
+  return handleResponse(response);
+}
+
+export async function getInterviewsApi() {
+  const response = await fetch(`${API_BASE_URL}/interviews`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
+export async function createInterviewApi(payload) {
+  const response = await fetch(`${API_BASE_URL}/interviews`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+export async function deleteInterviewApi(interviewId) {
+  const response = await fetch(`${API_BASE_URL}/interviews/${interviewId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
 export async function getCandidatesApi({
   skip = 0,
   limit = 50,
@@ -332,36 +361,46 @@ export async function getCandidatesApi({
   if (sortBy) params.append('sort_by', sortBy);
   if (sortOrder) params.append('sort_order', sortOrder);
 
-  const response = await fetch(`${API_BASE_URL}/candidates?${params.toString()}`);
+  const response = await fetch(`${API_BASE_URL}/candidates?${params.toString()}`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(response);
 }
 
 export async function getTopCandidatesApi(limit = 10) {
-  const response = await fetch(`${API_BASE_URL}/candidates/top?limit=${limit}`);
+  const response = await fetch(`${API_BASE_URL}/candidates/top?limit=${limit}`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(response);
 }
 
 export async function getCandidateByIdApi(candidateId) {
-  const response = await fetch(`${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}`);
+  const response = await fetch(`${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(response);
 }
 
 export async function getAnalyticsApi() {
-  const response = await fetch(`${API_BASE_URL}/analytics`);
+  const response = await fetch(`${API_BASE_URL}/analytics`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(response);
 }
 
 export async function analyzeJobApi(payload) {
   const response = await fetch(`${API_BASE_URL}/analyze`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
   return handleResponse(response);
 }
 
 export async function getSkillsApi() {
-  const response = await fetch(`${API_BASE_URL}/skills`);
+  const response = await fetch(`${API_BASE_URL}/skills`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse(response);
 }
 
@@ -400,8 +439,34 @@ export async function getHealthStatusApi() {
 }
 
 // ==========================================
-// CSV EXPORT URL BUILDERS
+// CSV & DATA EXPORT HELPERS (Authenticated)
 // ==========================================
+
+export async function downloadAuthenticatedExport(endpointUrl, fallbackFilename) {
+  const token = getAuthToken();
+  const response = await fetch(endpointUrl, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    let err = 'Export failed';
+    try {
+      const j = await response.json();
+      if (j && j.detail) err = j.detail;
+    } catch {
+      err = await response.text();
+    }
+    throw new Error(err || 'Export failed');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fallbackFilename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
 
 export function getExportRankingsUrl() {
   return `${API_BASE_URL}/export/rankings`;
@@ -420,10 +485,118 @@ export function getExportJsonUrl() {
 }
 
 export function getCandidateResumeViewUrl(candidateId) {
-  return `${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume`;
+  const token = getAuthToken();
+  const base = `${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume`;
+  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
 }
 
 export function getCandidateResumeDownloadUrl(candidateId) {
-  return `${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume/download`;
+  const token = getAuthToken();
+  const base = `${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume/download`;
+  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
 }
+
+/**
+ * Authenticated resume blob fetcher with JWT Authorization header.
+ * Used by ResumeViewerModal to load PDFs securely via Blob URL.
+ */
+export async function fetchCandidateResumeBlob(candidateId) {
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume`, {
+    headers,
+  });
+
+  if (response.status === 401) {
+    const err = new Error('Could not validate credentials or session has expired. Please sign in again.');
+    err.status = 401;
+    err.isAuthError = true;
+    throw err;
+  }
+
+  if (!response.ok) {
+    let errorMsg = `Server error (HTTP ${response.status})`;
+    try {
+      const data = await response.json();
+      if (data && data.detail) {
+        errorMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      }
+    } catch {
+      // ignore
+    }
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    throw err;
+  }
+
+  const blob = await response.blob();
+  const contentType = response.headers.get('content-type') || 'application/pdf';
+  return { blob, contentType };
+}
+
+/**
+ * Authenticated file downloader with JWT Authorization header.
+ * Triggers clean browser download using temporary object URL.
+ */
+export async function downloadCandidateResumeFile(candidateId, defaultFilename = null) {
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/candidates/${encodeURIComponent(candidateId)}/resume/download`, {
+    headers,
+  });
+
+  if (response.status === 401) {
+    const err = new Error('Could not validate credentials or session has expired. Please sign in again.');
+    err.status = 401;
+    err.isAuthError = true;
+    throw err;
+  }
+
+  if (!response.ok) {
+    let errorMsg = `Download failed (HTTP ${response.status})`;
+    try {
+      const data = await response.json();
+      if (data && data.detail) {
+        errorMsg = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      }
+    } catch {
+      // ignore
+    }
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    throw err;
+  }
+
+  let filename = defaultFilename;
+  const disposition = response.headers.get('Content-Disposition') || '';
+  if (!filename && disposition.includes('filename=')) {
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    if (match && match[1]) {
+      filename = match[1];
+    }
+  }
+  if (!filename) {
+    filename = `Resume_${candidateId}.pdf`;
+  }
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+}
+
+
 

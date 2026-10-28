@@ -25,10 +25,12 @@ import {
   SAMPLE_RESUMES,
   getRequiredSkillsDefault
 } from '../services/screeningService';
-import { getJobsApi, getCandidateResumeDownloadUrl } from '../services/api';
+import { getJobsApi, getCandidateResumeDownloadUrl, downloadCandidateResumeFile } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { JOB_TEMPLATES } from '../data/jobTemplates';
 
 export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
+  const { openAuthModal } = useAuth();
   // Tabs: 'upload' | 'results'
   const [activeTab, setActiveTab] = useState('upload');
 
@@ -352,7 +354,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
 
       {/* TAB 1: UPLOAD & SCREEN WORKFLOW */}
       {activeTab === 'upload' && (
-        <div className="space-y-6 bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
+        <div className="space-y-6 bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-sm">
           {/* STEP 1: SELECT JOB OPENING */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -412,7 +414,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`dropzone-container border-2 border-dashed rounded-xl p-8 text-center cursor-pointer ${
+              className={`dropzone-container border-2 border-dashed rounded-xl p-5 sm:p-8 text-center cursor-pointer ${
                 isDragging
                   ? 'is-dragging border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20'
                   : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/50 dark:bg-[#121A2F]/40'
@@ -543,7 +545,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
                 {screeningResults.length > 0 ? `${Math.round(screeningResults[0].atsScore)}%` : 'N/A'}
               </strong>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handleExportCSV}
@@ -565,7 +567,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
 
           {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 w-full sm:max-w-sm">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
@@ -576,7 +578,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <select
                 value={recommendationFilter}
                 onChange={(e) => setRecommendationFilter(e.target.value)}
@@ -615,7 +617,7 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[720px]">
                   <thead className="bg-slate-50/75 dark:bg-[#121A2F] border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                     <tr>
                       <th className="py-3 px-4 font-medium w-14">Rank</th>
@@ -727,15 +729,25 @@ export default function ResumeScreening({ onAnalysisComplete, initialJob }) {
                                 <Eye className="w-3.5 h-3.5" />
                               </button>
 
-                              {/* Download Resume Direct Trigger */}
-                              <a
-                                href={getCandidateResumeDownloadUrl(candidate.id)}
-                                download
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                              {/* Download Resume Direct Trigger with JWT Auth */}
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await downloadCandidateResumeFile(candidate.id, candidate.fileName);
+                                  } catch (err) {
+                                    if (err.isAuthError || err.status === 401) {
+                                      if (openAuthModal) openAuthModal('login');
+                                    } else {
+                                      alert(err.message || 'Failed to download resume file.');
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
                                 title="Download Resume File"
                               >
                                 <Download className="w-3.5 h-3.5" />
-                              </a>
+                              </button>
 
                               <button
                                 onClick={() => {

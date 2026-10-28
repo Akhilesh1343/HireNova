@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import bcrypt
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from backend.database import get_db
@@ -49,19 +49,21 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def get_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
+    token_query: Optional[str] = Query(None, alias="token"),
     db: Session = Depends(get_db)
 ) -> User:
-    """FastAPI dependency to authenticate requests using Bearer JWT."""
+    """FastAPI dependency to authenticate requests using Bearer JWT or query param token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials or session has expired. Please sign in again.",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    if not token:
+    auth_token = token or token_query
+    if not auth_token:
         raise credentials_exception
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(auth_token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -76,13 +78,15 @@ def get_current_user(
 
 def get_optional_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
+    token_query: Optional[str] = Query(None, alias="token"),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Dependency that returns current user if token is valid, or None if unauthenticated."""
-    if not token:
+    auth_token = token or token_query
+    if not auth_token:
         return None
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(auth_token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if not email:
             return None

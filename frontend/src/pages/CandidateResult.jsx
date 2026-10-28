@@ -17,15 +17,18 @@ import { RecommendationBadge } from '../components/common/Badge';
 import AnimatedNumber from '../components/common/AnimatedNumber';
 import ResumeViewerModal from '../components/common/ResumeViewerModal';
 import { fetchCandidateByIdApi, getCandidateById, getAllCandidates } from '../services/screeningService';
-import { getCandidateResumeDownloadUrl } from '../services/api';
+import { getCandidateResumeDownloadUrl, downloadCandidateResumeFile } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function CandidateResult({ candidateId, analysisResult, setCurrentTab }) {
+  const { openAuthModal } = useAuth();
   const [candidate, setCandidate] = useState(analysisResult || null);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [isUnderReview, setIsUnderReview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showModelDetails, setShowModelDetails] = useState(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+  const [isDownloadingResume, setIsDownloadingResume] = useState(false);
 
   useEffect(() => {
     if (analysisResult) {
@@ -136,15 +139,29 @@ export default function CandidateResult({ candidateId, analysisResult, setCurren
             <span>View Resume</span>
           </button>
 
-          {/* Download Resume Button (Real File) */}
-          <a
-            href={downloadUrl}
-            download
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-[#121A2F] hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm btn-interactive"
+          {/* Download Resume Button (Real File with JWT Auth) */}
+          <button
+            type="button"
+            disabled={isDownloadingResume}
+            onClick={async () => {
+              try {
+                setIsDownloadingResume(true);
+                await downloadCandidateResumeFile(cId, fileName);
+              } catch (err) {
+                if (err.isAuthError || err.status === 401) {
+                  if (openAuthModal) openAuthModal('login');
+                } else {
+                  alert(err.message || 'Failed to download resume file.');
+                }
+              } finally {
+                setIsDownloadingResume(false);
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-emerald-200 bg-white dark:bg-[#131F1B] hover:bg-slate-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-emerald-500/30 rounded-lg shadow-sm btn-interactive disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Download Resume</span>
-          </a>
+            <Download className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+            <span>{isDownloadingResume ? 'Downloading...' : 'Download Resume'}</span>
+          </button>
 
           {/* Shortlist Toggle */}
           <button

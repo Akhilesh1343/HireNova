@@ -189,7 +189,7 @@ export default function CandidateRankings({ onSelectCandidate }) {
         </div>
 
         {/* Server CSV Exports */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a
             href={getExportRankingsUrl()}
             download="Candidate_Rankings.csv"
@@ -213,9 +213,9 @@ export default function CandidateRankings({ onSelectCandidate }) {
       </div>
 
       {/* Simple Filter Controls Bar */}
-      <div className="bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+      <div className="bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-sm flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 w-full lg:max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -300,7 +300,7 @@ export default function CandidateRankings({ onSelectCandidate }) {
       {/* Candidates List Table */}
       <div className="bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[720px]">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#080B14]/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 <th
@@ -487,7 +487,7 @@ export default function CandidateRankings({ onSelectCandidate }) {
         </div>
 
         {/* Footer / Pagination */}
-        <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-[#080B14]/70">
+        <div className="px-4 sm:px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-[#080B14]/70">
           <div>
             Showing <span className="font-semibold text-slate-800 dark:text-white">{filteredCandidates.length > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}</span> to{' '}
             <span className="font-semibold text-slate-800 dark:text-white">{Math.min(filteredCandidates.length, currentPage * rowsPerPage)}</span> of{' '}

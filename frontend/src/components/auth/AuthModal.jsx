@@ -12,7 +12,11 @@ import {
   EyeOff,
   Check,
   ShieldCheck,
-  ChevronLeft
+  ChevronLeft,
+  Sparkles,
+  Target,
+  Zap,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,22 +24,22 @@ const ROLES = [
   {
     id: 'Recruiter',
     title: 'Recruiter',
-    description: 'Manage candidates and resume screening.'
+    description: 'Manage candidates, screen resumes and evaluate skills.'
   },
   {
     id: 'Hiring Manager',
     title: 'Hiring Manager',
-    description: 'Review candidates and make hiring decisions.'
+    description: 'Review shortlisted candidates and conduct interviews.'
   },
   {
     id: 'HR Lead',
     title: 'HR Lead',
-    description: 'Monitor recruitment activity and team performance.'
+    description: 'Monitor recruitment metrics and team performance.'
   }
 ];
 
 function calculatePasswordStrength(pass) {
-  if (!pass) return { score: 0, label: '', color: 'bg-slate-200 dark:bg-slate-700', width: '0%' };
+  if (!pass) return { score: 0, label: '', color: 'bg-slate-700', width: '0%' };
   let points = 0;
   if (pass.length >= 8) points += 1;
   if (pass.length >= 12) points += 1;
@@ -44,7 +48,7 @@ function calculatePasswordStrength(pass) {
   if (/[^A-Za-z0-9]/.test(pass)) points += 1;
 
   if (points <= 2) {
-    return { score: 1, label: 'Weak (min 8 chars, mix case/numbers)', color: 'bg-red-500', width: '33%' };
+    return { score: 1, label: 'Weak (min 8 chars, mix letters/numbers)', color: 'bg-red-500', width: '33%' };
   } else if (points <= 3) {
     return { score: 2, label: 'Medium', color: 'bg-amber-500', width: '66%' };
   } else {
@@ -137,6 +141,17 @@ export default function AuthModal({ onLoginSuccess }) {
 
   if (!isAuthModalOpen) return null;
 
+  const handleClose = () => {
+    closeAuthModal();
+    try {
+      if (window.location.hash === '#login' || window.location.hash === '#signup' || window.location.hash === '#register') {
+        window.history.pushState(null, '', window.location.pathname);
+      }
+    } catch {
+      // Ignore history state errors
+    }
+  };
+
   const switchView = (newView) => {
     setErrorMessage('');
     setSuccessMessage('');
@@ -161,7 +176,7 @@ export default function AuthModal({ onLoginSuccess }) {
       return;
     }
     if (!isValidEmail(cleanEmail)) {
-      setErrorMessage('Please enter a valid work email address (e.g. name@company.com).');
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
     if (!loginPassword) {
@@ -171,11 +186,11 @@ export default function AuthModal({ onLoginSuccess }) {
 
     setIsSubmitting(true);
     try {
-      const loggedUser = await login(cleanEmail, loginPassword, rememberMe);
-      closeAuthModal();
+      const resUser = await login(cleanEmail, loginPassword, rememberMe);
       if (onLoginSuccess) {
-        onLoginSuccess(loggedUser);
+        onLoginSuccess(resUser);
       }
+      handleClose();
     } catch (err) {
       setErrorMessage(err.message || 'Invalid email or password. Please verify your credentials.');
     } finally {
@@ -191,32 +206,28 @@ export default function AuthModal({ onLoginSuccess }) {
     setErrorMessage('');
     setSuccessMessage('');
 
-    const cleanFullName = regFullName.trim();
+    const cleanName = regFullName.trim();
     const cleanEmail = regEmail.trim();
     const cleanCompany = regCompany.trim();
 
-    if (!cleanFullName) {
-      setErrorMessage('Please enter your full name.');
+    if (!cleanName || cleanName.length < 2) {
+      setErrorMessage('Please enter your full name (minimum 2 characters).');
       return;
     }
-    if (!cleanEmail) {
-      setErrorMessage('Please enter your work email.');
-      return;
-    }
-    if (!isValidEmail(cleanEmail)) {
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
       setErrorMessage('Please enter a valid work email address.');
       return;
     }
     if (!cleanCompany) {
-      setErrorMessage('Please enter your company name.');
+      setErrorMessage('Please enter your company or organization name.');
       return;
     }
     if (regPassword.length < 8) {
-      setErrorMessage('Password must be at least 8 characters in length.');
+      setErrorMessage('Password must be at least 8 characters long.');
       return;
     }
     if (regPassword !== regConfirmPassword) {
-      setErrorMessage('Passwords do not match. Please verify both password fields.');
+      setErrorMessage('Passwords do not match. Please verify both password entries.');
       return;
     }
 
@@ -225,18 +236,17 @@ export default function AuthModal({ onLoginSuccess }) {
       await register({
         email: cleanEmail,
         password: regPassword,
-        full_name: cleanFullName,
+        full_name: cleanName,
         company_name: cleanCompany,
         role: regRole
       });
 
-      // UX requirement: Registration -> Account Created -> Login
       setAccountCreatedSuccess(true);
       setLoginEmail(cleanEmail);
       setRegPassword('');
       setRegConfirmPassword('');
     } catch (err) {
-      setErrorMessage(err.message || 'Registration failed. Please check your details.');
+      setErrorMessage(err.message || 'Could not complete registration. Please check details and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -309,7 +319,7 @@ export default function AuthModal({ onLoginSuccess }) {
       setResetCompletedSuccess(true);
       setLoginPassword('');
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to reset password. The link may have expired.');
+      setErrorMessage(err.message || 'Could not reset password. The link or token may have expired.');
     } finally {
       setIsSubmitting(false);
     }
@@ -318,663 +328,837 @@ export default function AuthModal({ onLoginSuccess }) {
   const regStrength = calculatePasswordStrength(regPassword);
   const resetStrength = calculatePasswordStrength(newPassword);
 
+  const isTabbedView = currentView === 'login' || currentView === 'register';
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-backdrop overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 lg:p-8 bg-slate-950/85 backdrop-blur-xl animate-backdrop overflow-y-auto"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="auth-modal-title"
     >
+      {/* Split-screen Modal Container */}
       <div
-        className="w-full max-w-md my-8 bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden animate-modal"
+        className="w-full max-w-5xl xl:max-w-[1100px] my-auto min-h-[560px] lg:h-[660px] xl:h-[700px] max-h-[94vh] bg-[#0B1210] border border-emerald-500/20 rounded-2xl sm:rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),0_0_50px_rgba(5,150,105,0.18)] flex flex-col lg:flex-row overflow-hidden relative animate-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={closeAuthModal}
-          className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-interactive"
-          aria-label="Close dialog"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* =========================================================================
+            LEFT PANEL: BRAND EXPERIENCE (Desktop Only: lg+)
+            Emerald Obsidian Dark Theme coordinates with HireNova branding
+            ========================================================================= */}
+        <div className="hidden lg:flex lg:w-1/2 p-8 xl:p-10 flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#0B1210] via-[#0E1A16] to-[#050807] border-r border-emerald-500/15 select-none">
+          
+          {/* Atmospheric ambient glows */}
+          <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-emerald-600/15 blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-teal-500/15 blur-[100px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-[#059669]/15 blur-[80px] pointer-events-none animate-atmospheric-pulse" />
+          <div className="absolute inset-0 bg-subtle-grid opacity-20 pointer-events-none" />
 
-        {/* Brand Header */}
-        <div className="flex items-center gap-2.5 mb-5">
-          <div className="w-8 h-8 rounded-lg bg-slate-900/5 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/[0.08] p-1 flex items-center justify-center shadow-xs shrink-0">
-            <img src="/assets/hirenova-logo.png" alt="HireNova Logo" className="w-full h-full object-contain" draggable={false} />
+          {/* Top Brand Identity */}
+          <div className="relative z-10 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#0B1210] border border-emerald-500/25 p-1.5 flex items-center justify-center shadow-lg shadow-emerald-950/40 shrink-0 backdrop-blur-md">
+              <img
+                src="/assets/hirenova-logo.png"
+                alt="HireNova Brand Mark"
+                className="w-full h-full object-contain"
+                draggable={false}
+              />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
+                HireNova
+                <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] inline-block animate-pulse" />
+              </span>
+              <span className="text-[10px] font-medium text-emerald-400/80 tracking-wider uppercase">
+                Next-Gen Recruitment
+              </span>
+            </div>
           </div>
-          <div>
-            <h2 className="font-bold text-base text-slate-900 dark:text-white tracking-tight">
-              HireNova
+
+          {/* Center 3D Logo Showcase Card */}
+          <div className="relative z-10 my-auto py-2 flex flex-col items-center text-center">
+            {/* Soft glowing aura behind the logo */}
+            <div className="relative flex items-center justify-center w-36 h-36 xl:w-40 xl:h-40">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-500/25 to-emerald-400/20 blur-2xl animate-atmospheric-pulse pointer-events-none" />
+              
+              {/* 3D Rotating Logo */}
+              <div className="relative z-10 w-28 h-28 xl:w-32 xl:h-32 flex items-center justify-center animate-h-logo-3d">
+                <img
+                  src="/assets/hirenova-logo.png"
+                  alt="HireNova 3D Teal Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_20px_35px_rgba(52,211,153,0.35)]"
+                  draggable={false}
+                />
+              </div>
+            </div>
+            
+            {/* Subtle perspective shadow below 3D logo */}
+            <div className="w-24 h-3.5 rounded-full bg-black/60 blur-md mx-auto -mt-1 scale-y-50" />
+
+            {/* Headline & Supporting Text */}
+            <h2 className="text-xl xl:text-2xl font-extrabold text-white tracking-tight mt-6 leading-tight">
+              Hire Smarter.{' '}
+              <span className="bg-gradient-to-r from-[#A7F3D0] via-[#34D399] to-teal-300 bg-clip-text text-transparent">
+                Find the Right Talent.
+              </span>
             </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Next-Gen Recruitment
+            <p className="text-xs text-slate-300/80 mt-2.5 max-w-sm leading-relaxed mx-auto">
+              AI-powered resume screening and candidate shortlisting, designed to help your team make better hiring decisions.
             </p>
           </div>
-        </div>
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-xs flex items-start gap-2 animate-toast">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Success Alert */}
-        {successMessage && (
-          <div className="mb-4 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs flex items-start gap-2 animate-toast">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{successMessage}</span>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* VIEW 1: LOGIN                                                */}
-        {/* ============================================================ */}
-        {currentView === 'login' && (
-          <div>
-            <div className="mb-5">
-              <h3 className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">
-                Sign in to HireNova
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Enter your work credentials to access your screening workspace.
+          {/* Three Compact Feature Highlights */}
+          <div className="relative z-10 grid grid-cols-3 gap-2.5 pt-4 border-t border-emerald-500/15">
+            {/* Feature 1 */}
+            <div className="p-2.5 rounded-xl bg-[#131F1B]/70 border border-emerald-500/15 backdrop-blur-sm">
+              <div className="w-6 h-6 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-[#34D399] flex items-center justify-center mb-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div className="font-semibold text-[11px] text-white leading-tight">
+                AI Resume Screening
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                Instant semantic extraction
               </p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              {/* Work Email */}
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Work Email
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  <input
-                    type="email"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="name@company.com"
-                    autoComplete="email"
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                  />
-                </div>
+            {/* Feature 2 */}
+            <div className="p-2.5 rounded-xl bg-[#131F1B]/70 border border-emerald-500/15 backdrop-blur-sm">
+              <div className="w-6 h-6 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center mb-1.5">
+                <Target className="w-3.5 h-3.5" />
               </div>
-
-              {/* Password */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => switchView('forgot-password')}
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    className="w-full pl-9 pr-10 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    title={showLoginPassword ? 'Hide password' : 'Show password'}
-                    aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+              <div className="font-semibold text-[11px] text-white leading-tight">
+                Candidate Matching
               </div>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                Multi-metric ATS scoring
+              </p>
+            </div>
 
-              {/* Remember Me */}
-              <div className="flex items-center">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600 dark:text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded text-indigo-600 border-slate-300 dark:border-slate-700 focus:ring-indigo-500"
-                  />
-                  <span>Remember Me</span>
-                </label>
+            {/* Feature 3 */}
+            <div className="p-2.5 rounded-xl bg-[#131F1B]/70 border border-emerald-500/15 backdrop-blur-sm">
+              <div className="w-6 h-6 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 flex items-center justify-center mb-1.5">
+                <Zap className="w-3.5 h-3.5" />
               </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 mt-4 btn-interactive"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span>Sign In</span>
-                )}
-              </button>
-            </form>
-
-            {/* Switch to Register */}
-            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={() => switchView('register')}
-                className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold ml-1"
-              >
-                Create an account
-              </button>
+              <div className="font-semibold text-[11px] text-white leading-tight">
+                Fast Shortlisting
+              </div>
+              <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                Automated rankings
+              </p>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* ============================================================ */}
-        {/* VIEW 2: REGISTRATION                                         */}
-        {/* ============================================================ */}
-        {currentView === 'register' && (
+        {/* =========================================================================
+            RIGHT PANEL: AUTHENTICATION FORMS (All Screen Sizes)
+            Clean, modern, obsidian-dark recruitment card
+            ========================================================================= */}
+        <div className="w-full lg:w-1/2 p-5 sm:p-7 xl:p-9 flex flex-col justify-between relative overflow-y-auto bg-[#0B1210] text-[#F8FAFC]">
+          
+          {/* Top Bar: Mobile Brand + Tab Navigation + Close Button */}
           <div>
-            {accountCreatedSuccess ? (
-              <div className="text-center py-4 space-y-4 animate-toast">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-4">
+              
+              {/* Mobile-Only Brand Header (< 1024px) */}
+              <div className="flex items-center gap-2.5 lg:hidden">
+                <div className="w-8 h-8 rounded-lg bg-[#0B1210] border border-emerald-500/25 p-1 flex items-center justify-center shrink-0">
+                  <img
+                    src="/assets/hirenova-logo.png"
+                    alt="HireNova Logo"
+                    className="w-full h-full object-contain"
+                    draggable={false}
+                  />
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-                    Account Created Successfully!
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                    Your account has been registered with HireNova. You can now sign in with your credentials.
-                  </p>
+                <div className="leading-tight">
+                  <span className="font-bold text-sm text-white flex items-center gap-1">
+                    HireNova
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] inline-block" />
+                  </span>
+                  <span className="text-[10px] text-emerald-400/80">Next-Gen Recruitment</span>
                 </div>
+              </div>
+
+              {/* Login / Sign Up Tab Switcher */}
+              {isTabbedView && (
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-[#131F1B] border border-emerald-500/20 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => switchView('login')}
+                    className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all ${
+                      currentView === 'login'
+                        ? 'bg-[#059669] text-white shadow-sm'
+                        : 'text-[#94A3A8] hover:text-[#F8FAFC] hover:bg-[#182A24]'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchView('register')}
+                    className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all ${
+                      currentView === 'register'
+                        ? 'bg-[#059669] text-white shadow-sm'
+                        : 'text-[#94A3A8] hover:text-[#F8FAFC] hover:bg-[#182A24]'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+              )}
+
+              {/* Back to Sign In Link (when in Forgot Password or Reset Password) */}
+              {!isTabbedView && (
                 <button
                   type="button"
                   onClick={() => switchView('login')}
-                  className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm btn-interactive inline-flex items-center justify-center gap-1.5"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-white transition-colors"
                 >
-                  <span>Continue to Sign In</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Back to Sign In</span>
                 </button>
+              )}
+
+              {/* Close Modal Button */}
+              <button
+                onClick={handleClose}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.07] transition-colors ml-auto"
+                aria-label="Close dialog"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Error Alert Banner */}
+            {errorMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-800/60 text-red-300 text-xs flex items-start gap-2.5 animate-toast">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{errorMessage}</span>
               </div>
-            ) : (
-              <div>
-                <div className="mb-4">
-                  <h3 className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">
-                    Create your account
+            )}
+
+            {/* Success Alert Banner */}
+            {successMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs flex items-start gap-2.5 animate-toast">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{successMessage}</span>
+              </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* VIEW 1: LOGIN                                                */}
+            {/* ============================================================ */}
+            {currentView === 'login' && (
+              <div className="animate-fadeIn">
+                <div className="mb-5">
+                  <h3 id="auth-modal-title" className="font-bold text-xl sm:text-2xl text-white tracking-tight">
+                    Welcome back
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Select your recruitment role and start screening talent faster.
+                  <p className="text-xs text-slate-400 mt-1">
+                    Sign in to continue to your recruitment workspace.
                   </p>
                 </div>
 
-                <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                  {/* Full Name */}
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  {/* Work Email Field */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Full Name *
+                    <label htmlFor="login-email" className="block text-xs font-medium text-slate-300 mb-1.5">
+                      Work Email
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       <input
-                        type="text"
-                        required
-                        value={regFullName}
-                        onChange={(e) => setRegFullName(e.target.value)}
-                        placeholder="e.g. Alex Morgan"
-                        autoComplete="name"
-                        className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Work Email */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Work Email *
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
+                        id="login-email"
                         type="email"
                         required
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                        placeholder="alex@company.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="name@company.com"
                         autoComplete="email"
-                        className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
+                        className="w-full pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 rounded-xl auth-input focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  {/* Company Name */}
+                  {/* Password Field */}
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Company Name *
-                    </label>
-                    <div className="relative">
-                      <Building className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        required
-                        value={regCompany}
-                        onChange={(e) => setRegCompany(e.target.value)}
-                        placeholder="e.g. CloudScale Technologies"
-                        autoComplete="organization"
-                        className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Role Selector with Descriptions (Requirement 4) */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                      Role *
-                    </label>
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                      {ROLES.map((r) => {
-                        const isSelected = regRole === r.id;
-                        return (
-                          <div
-                            key={r.id}
-                            onClick={() => setRegRole(r.id)}
-                            className={`p-2 rounded-lg border cursor-pointer transition-all flex items-start justify-between gap-2 ${
-                              isSelected
-                                ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200'
-                                : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#121A2F]'
-                            }`}
-                          >
-                            <div className="min-w-0">
-                              <div className="font-semibold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>{r.title}</span>
-                              </div>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                                {r.description}
-                              </p>
-                            </div>
-                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
-                              isSelected
-                                ? 'border-indigo-600 bg-indigo-600 text-white'
-                                : 'border-slate-300 dark:border-slate-600'
-                            }`}>
-                              {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Password *
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                      <input
-                        type={showRegPassword ? 'text' : 'password'}
-                        required
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="At least 8 characters"
-                        autoComplete="new-password"
-                        className="w-full pl-9 pr-10 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                      />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label htmlFor="login-password" className="block text-xs font-medium text-slate-300">
+                        Password
+                      </label>
                       <button
                         type="button"
-                        onClick={() => setShowRegPassword(!showRegPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                        title={showRegPassword ? 'Hide password' : 'Show password'}
-                        aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => switchView('forgot-password')}
+                        className="text-xs text-[#34D399] hover:text-[#A7F3D0] hover:underline font-medium"
                       >
-                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        Forgot Password?
                       </button>
                     </div>
-
-                    {/* Password Strength Indicator */}
-                    {regPassword && (
-                      <div className="mt-1.5 space-y-1">
-                        <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-300 ${regStrength.color}`}
-                            style={{ width: regStrength.width }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                          Strength: <span className="font-medium text-slate-700 dark:text-slate-300">{regStrength.label}</span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Confirm Password *
-                    </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       <input
-                        type={showRegConfirmPassword ? 'text' : 'password'}
+                        id="login-password"
+                        type={showLoginPassword ? 'text' : 'password'}
                         required
-                        value={regConfirmPassword}
-                        onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        autoComplete="new-password"
-                        className="w-full pl-9 pr-10 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                        className="w-full pl-10 pr-10 py-2.5 text-xs text-white placeholder:text-slate-500 rounded-xl auth-input focus:outline-none"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                        title={showRegConfirmPassword ? 'Hide password' : 'Show password'}
-                        aria-label={showRegConfirmPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                        title={showLoginPassword ? 'Hide password' : 'Show password'}
+                        aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
 
+                  {/* Remember Me Checkbox */}
+                  <div className="flex items-center pt-0.5">
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-400 hover:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-3.5 h-3.5 rounded border-white/[0.15] bg-white/[0.05] text-[#059669] focus:ring-[#059669] focus:ring-offset-0"
+                      />
+                      <span>Remember Me</span>
+                    </label>
+                  </div>
+
+                  {/* Primary Sign In Button */}
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 mt-4 btn-interactive"
+                    className="w-full py-2.5 sm:py-3 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-lg shadow-emerald-700/25 transition-all duration-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Creating Account...</span>
+                        <span>Signing in...</span>
                       </>
                     ) : (
-                      <span>Create Account</span>
+                      <span>Sign In</span>
                     )}
                   </button>
                 </form>
 
-                {/* Back to sign in */}
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
-                  Already have an account?{' '}
+                {/* Divider & Switch to Register */}
+                <div className="mt-6 pt-4 border-t border-emerald-500/15 text-center text-xs text-slate-400">
+                  New to HireNova?{' '}
                   <button
                     type="button"
-                    onClick={() => switchView('login')}
-                    className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold ml-1"
+                    onClick={() => switchView('register')}
+                    className="text-[#34D399] hover:text-[#A7F3D0] font-semibold hover:underline ml-1"
                   >
-                    Sign in
+                    Create an account
                   </button>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* ============================================================ */}
-        {/* VIEW 3: FORGOT PASSWORD (Requirement 2)                      */}
-        {/* ============================================================ */}
-        {currentView === 'forgot-password' && (
-          <div>
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={() => switchView('login')}
-                className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 mb-2"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span>Back to Sign In</span>
-              </button>
-              <h3 className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">
-                Reset your password
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Enter your email and we'll send you instructions to reset your password.
-              </p>
-            </div>
-
-            {forgotSubmitted ? (
-              <div className="py-4 space-y-4 animate-toast">
-                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs">
-                  <div className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            {/* ============================================================ */}
+            {/* VIEW 2: REGISTRATION                                         */}
+            {/* ============================================================ */}
+            {currentView === 'register' && (
+              <div className="animate-fadeIn">
+                {accountCreatedSuccess ? (
+                  <div className="text-center py-6 space-y-4 animate-toast">
+                    <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-700 text-emerald-400 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
                     <div>
-                      <div className="font-semibold">Reset instructions dispatched</div>
-                      <p className="mt-1 text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                        If an account exists for <span className="font-medium">{forgotEmail}</span>, instructions to reset your password have been sent. Please check your inbox and spam folder.
+                      <h4 className="font-bold text-lg text-white">
+                        Account Created Successfully!
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                        Your account has been registered with HireNova. You can now sign in with your credentials.
                       </p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Development-safe reset mechanism without fake claims (Requirement 2) */}
-                {devResetToken && (
-                  <div className="p-3 rounded-lg bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/70 text-xs text-slate-700 dark:text-slate-300">
-                    <div className="flex items-center gap-1.5 font-medium text-indigo-900 dark:text-indigo-200 mb-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                      <span>Development Environment Verification</span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                      Local SMTP is not configured. A development reset token has been verified:
-                    </p>
                     <button
                       type="button"
-                      onClick={() => {
-                        setResetToken(devResetToken);
-                        switchView('reset-password');
-                      }}
-                      className="mt-2.5 w-full py-2 px-3 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm btn-interactive inline-flex items-center justify-center gap-1"
+                      onClick={() => switchView('login')}
+                      className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-md inline-flex items-center justify-center gap-1.5"
                     >
-                      <span>Proceed to Reset Password</span>
+                      <span>Continue to Sign In</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                )}
+                ) : (
+                  <div>
+                    <div className="mb-4">
+                      <h3 id="auth-modal-title" className="font-bold text-xl sm:text-2xl text-white tracking-tight">
+                        Create your account
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Get started with smarter recruitment.
+                      </p>
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={() => switchView('login')}
-                  className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 rounded-lg shadow-sm btn-interactive"
-                >
-                  Back to Sign In
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleForgotSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Registered Work Email *
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <input
-                      type="email"
-                      required
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="name@company.com"
-                      autoComplete="email"
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                    />
+                    <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                      {/* Full Name */}
+                      <div>
+                        <label htmlFor="reg-name" className="block text-xs font-medium text-slate-300 mb-1">
+                          Full Name *
+                        </label>
+                        <div className="relative">
+                          <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            id="reg-name"
+                            type="text"
+                            required
+                            value={regFullName}
+                            onChange={(e) => setRegFullName(e.target.value)}
+                            placeholder="e.g. Alex Morgan"
+                            autoComplete="name"
+                            className="w-full pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 rounded-lg auth-input focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Work Email */}
+                      <div>
+                        <label htmlFor="reg-email" className="block text-xs font-medium text-slate-300 mb-1">
+                          Work Email *
+                        </label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            id="reg-email"
+                            type="email"
+                            required
+                            value={regEmail}
+                            onChange={(e) => setRegEmail(e.target.value)}
+                            placeholder="alex@company.com"
+                            autoComplete="email"
+                            className="w-full pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 rounded-lg auth-input focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Company Name */}
+                      <div>
+                        <label htmlFor="reg-company" className="block text-xs font-medium text-slate-300 mb-1">
+                          Company Name *
+                        </label>
+                        <div className="relative">
+                          <Building className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            id="reg-company"
+                            type="text"
+                            required
+                            value={regCompany}
+                            onChange={(e) => setRegCompany(e.target.value)}
+                            placeholder="e.g. CloudScale Technologies"
+                            autoComplete="organization"
+                            className="w-full pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 rounded-lg auth-input focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Role Selector with Descriptions (Admin Excluded!) */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1">
+                          Role *
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {ROLES.map((r) => {
+                            const isSelected = regRole === r.id;
+                            return (
+                              <button
+                                key={r.id}
+                                type="button"
+                                onClick={() => setRegRole(r.id)}
+                                className={`p-2 rounded-lg border text-left transition-all ${
+                                  isSelected
+                                    ? 'border-[#059669] bg-emerald-950/40 text-white'
+                                    : 'border-emerald-500/15 hover:border-emerald-500/30 bg-[#131F1B] text-[#94A3A8]'
+                                }`}
+                              >
+                                <div className="font-semibold text-[11px] text-white truncate">
+                                  {r.title}
+                                </div>
+                                <p className="text-[9px] text-slate-400 mt-0.5 line-clamp-1">
+                                  {r.description}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Password */}
+                      <div>
+                        <label htmlFor="reg-password" className="block text-xs font-medium text-slate-300 mb-1">
+                          Password *
+                        </label>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            id="reg-password"
+                            type={showRegPassword ? 'text' : 'password'}
+                            required
+                            value={regPassword}
+                            onChange={(e) => setRegPassword(e.target.value)}
+                            placeholder="At least 8 characters"
+                            autoComplete="new-password"
+                            className="w-full pl-9 pr-10 py-2 text-xs text-white placeholder:text-slate-500 rounded-lg auth-input focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegPassword(!showRegPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                            title={showRegPassword ? 'Hide password' : 'Show password'}
+                            aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+
+                        {/* Password Strength Indicator */}
+                        {regPassword && (
+                          <div className="mt-1.5 space-y-1">
+                            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-300 ${regStrength.color}`}
+                                style={{ width: regStrength.width }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-400">
+                              Strength: <span className="font-medium text-slate-300">{regStrength.label}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div>
+                        <label htmlFor="reg-confirm-password" className="block text-xs font-medium text-slate-300 mb-1">
+                          Confirm Password *
+                        </label>
+                        <div className="relative">
+                          <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            id="reg-confirm-password"
+                            type={showRegConfirmPassword ? 'text' : 'password'}
+                            required
+                            value={regConfirmPassword}
+                            onChange={(e) => setRegConfirmPassword(e.target.value)}
+                            placeholder="Re-enter password"
+                            autoComplete="new-password"
+                            className="w-full pl-9 pr-10 py-2 text-xs text-white placeholder:text-slate-500 rounded-lg auth-input focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                            title={showRegConfirmPassword ? 'Hide password' : 'Show password'}
+                            aria-label={showRegConfirmPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-lg shadow-emerald-700/25 transition-all duration-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-3"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Creating Account...</span>
+                          </>
+                        ) : (
+                          <span>Create Account</span>
+                        )}
+                      </button>
+                    </form>
+
+                    {/* Back to sign in */}
+                    <div className="mt-4 pt-3 border-t border-emerald-500/15 text-center text-xs text-slate-400">
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => switchView('login')}
+                        className="text-[#34D399] hover:text-[#A7F3D0] font-semibold hover:underline ml-1"
+                      >
+                        Sign in
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 btn-interactive"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Sending Instructions...</span>
-                    </>
-                  ) : (
-                    <span>Send Reset Link</span>
-                  )}
-                </button>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => switchView('login')}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  >
-                    Cancel and return to Sign In
-                  </button>
-                </div>
-              </form>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* ============================================================ */}
-        {/* VIEW 4: RESET PASSWORD (Requirement 3)                       */}
-        {/* ============================================================ */}
-        {currentView === 'reset-password' && (
-          <div>
-            <div className="mb-4">
-              <h3 className="font-bold text-xl text-slate-900 dark:text-white tracking-tight">
-                Set new password
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Create a strong new password for your recruiter account.
-              </p>
-            </div>
-
-            {resetCompletedSuccess ? (
-              <div className="py-4 space-y-4 text-center animate-toast">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-base text-slate-900 dark:text-white">
-                    Password Reset Complete
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Your password has been reset successfully.
+            {/* ============================================================ */}
+            {/* VIEW 3: FORGOT PASSWORD                                      */}
+            {/* ============================================================ */}
+            {currentView === 'forgot-password' && (
+              <div className="animate-fadeIn">
+                <div className="mb-4">
+                  <h3 id="auth-modal-title" className="font-bold text-xl sm:text-2xl text-white tracking-tight">
+                    Reset your password
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Enter your email and we'll send you instructions to reset your password.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => switchView('login')}
-                  className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm btn-interactive inline-flex items-center justify-center gap-1.5"
-                >
-                  <span>Continue to Sign In</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleResetSubmit} className="space-y-3.5">
-                {/* New Password */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    New Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      required
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Minimum 8 characters"
-                      autoComplete="new-password"
-                      className="w-full pl-9 pr-10 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                    />
+
+                {forgotSubmitted ? (
+                  <div className="py-4 space-y-4 animate-toast">
+                    <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/80 text-emerald-300 text-xs">
+                      <div className="flex items-start gap-2.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-semibold">Reset instructions dispatched</div>
+                          <p className="mt-1 text-emerald-300/90 leading-relaxed">
+                            If an account exists for <span className="font-medium text-white">{forgotEmail}</span>, instructions to reset your password have been processed. Please check your inbox and spam folder.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Development Environment Token Verification */}
+                    {devResetToken && (
+                      <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/70 text-xs text-slate-300">
+                        <div className="flex items-center gap-1.5 font-medium text-emerald-300 mb-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#34D399]" />
+                          <span>Development Environment Verification</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-snug">
+                          Local SMTP is not configured. A development reset token has been verified:
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResetToken(devResetToken);
+                            switchView('reset-password');
+                          }}
+                          className="mt-2.5 w-full py-2 px-3 text-xs font-semibold text-white bg-[#059669] hover:bg-[#047857] rounded-lg shadow-sm inline-flex items-center justify-center gap-1"
+                        >
+                          <span>Proceed to Reset Password</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                      title={showNewPassword ? 'Hide password' : 'Show password'}
-                      aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => switchView('login')}
+                      className="w-full py-2.5 px-4 text-xs font-medium text-slate-300 bg-white/[0.05] hover:bg-white/[0.08] rounded-xl border border-white/[0.08]"
                     >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      Back to Sign In
                     </button>
                   </div>
-
-                  {/* Password Strength Indicator */}
-                  {newPassword && (
-                    <div className="mt-1.5 space-y-1">
-                      <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full transition-all duration-300 ${resetStrength.color}`}
-                          style={{ width: resetStrength.width }}
+                ) : (
+                  <form onSubmit={handleForgotSubmit} className="space-y-4">
+                    <div>
+                      <label htmlFor="forgot-email" className="block text-xs font-medium text-slate-300 mb-1.5">
+                        Registered Work Email *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          id="forgot-email"
+                          type="email"
+                          required
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          placeholder="name@company.com"
+                          autoComplete="email"
+                          className="w-full pl-10 pr-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 rounded-xl auth-input focus:outline-none"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Strength: <span className="font-medium text-slate-700 dark:text-slate-300">{resetStrength.label}</span>
-                      </span>
                     </div>
-                  )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-2.5 sm:py-3 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-lg shadow-emerald-700/25 transition-all duration-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Sending Instructions...</span>
+                        </>
+                      ) : (
+                        <span>Send Reset Link</span>
+                      )}
+                    </button>
+
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => switchView('login')}
+                        className="text-xs text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel and return to Sign In
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* VIEW 4: RESET PASSWORD                                       */}
+            {/* ============================================================ */}
+            {currentView === 'reset-password' && (
+              <div className="animate-fadeIn">
+                <div className="mb-4">
+                  <h3 id="auth-modal-title" className="font-bold text-xl sm:text-2xl text-white tracking-tight">
+                    Set new password
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Create a strong new password for your recruiter account.
+                  </p>
                 </div>
 
-                {/* Confirm New Password */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Confirm New Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                    <input
-                      type={showConfirmNewPassword ? 'text' : 'password'}
-                      required
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      placeholder="Re-enter new password"
-                      autoComplete="new-password"
-                      className="w-full pl-9 pr-10 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121A2F] text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
-                    />
+                {resetCompletedSuccess ? (
+                  <div className="py-6 space-y-4 text-center animate-toast">
+                    <div className="w-12 h-12 rounded-full bg-emerald-950/60 border border-emerald-700 text-emerald-400 flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base text-white">
+                        Password Reset Complete
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Your password has been reset successfully. You can now sign in with your new password.
+                      </p>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                      title={showConfirmNewPassword ? 'Hide password' : 'Show password'}
-                      aria-label={showConfirmNewPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => switchView('login')}
+                      className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-md inline-flex items-center justify-center gap-1.5"
                     >
-                      {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span>Continue to Sign In</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                </div>
+                ) : (
+                  <form onSubmit={handleResetSubmit} className="space-y-4">
+                    {/* New Password */}
+                    <div>
+                      <label htmlFor="new-password" className="block text-xs font-medium text-slate-300 mb-1.5">
+                        New Password *
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          id="new-password"
+                          type={showNewPassword ? 'text' : 'password'}
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Minimum 8 characters"
+                          autoComplete="new-password"
+                          className="w-full pl-10 pr-10 py-2.5 text-xs text-white placeholder:text-slate-500 rounded-xl auth-input focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                          title={showNewPassword ? 'Hide password' : 'Show password'}
+                          aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 mt-4 btn-interactive"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Updating Password...</span>
-                    </>
-                  ) : (
-                    <span>Reset Password</span>
-                  )}
-                </button>
+                      {/* Password Strength Indicator */}
+                      {newPassword && (
+                        <div className="mt-1.5 space-y-1">
+                          <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ${resetStrength.color}`}
+                              style={{ width: resetStrength.width }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            Strength: <span className="font-medium text-slate-300">{resetStrength.label}</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => switchView('login')}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                  >
-                    Cancel and return to Sign In
-                  </button>
-                </div>
-              </form>
+                    {/* Confirm New Password */}
+                    <div>
+                      <label htmlFor="confirm-new-password" className="block text-xs font-medium text-slate-300 mb-1.5">
+                        Confirm New Password *
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <input
+                          id="confirm-new-password"
+                          type={showConfirmNewPassword ? 'text' : 'password'}
+                          required
+                          value={confirmNewPassword}
+                          onChange={(e) => setConfirmNewPassword(e.target.value)}
+                          placeholder="Re-enter new password"
+                          autoComplete="new-password"
+                          className="w-full pl-10 pr-10 py-2.5 text-xs text-white placeholder:text-slate-500 rounded-xl auth-input focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                          title={showConfirmNewPassword ? 'Hide password' : 'Show password'}
+                          aria-label={showConfirmNewPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-2.5 sm:py-3 px-4 text-xs font-semibold text-white bg-gradient-to-r from-[#059669] to-[#10B981] hover:from-[#047857] hover:to-[#059669] rounded-xl shadow-lg shadow-emerald-700/25 transition-all duration-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Updating Password...</span>
+                        </>
+                      ) : (
+                        <span>Reset Password</span>
+                      )}
+                    </button>
+
+                    <div className="text-center pt-2">
+                      <button
+                        type="button"
+                        onClick={() => switchView('login')}
+                        className="text-xs text-slate-400 hover:text-white transition-colors"
+                      >
+                        Cancel and return to Sign In
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             )}
           </div>
-        )}
+
+          {/* Bottom Security Note */}
+          <div className="pt-4 mt-6 border-t border-emerald-500/15 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-[#34D399]" />
+              <span>256-bit SSL encrypted</span>
+            </span>
+            <span>HireNova © 2026</span>
+          </div>
+
+        </div>
       </div>
     </div>
   );

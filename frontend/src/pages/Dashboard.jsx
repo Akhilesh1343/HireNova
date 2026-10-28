@@ -11,28 +11,30 @@ import {
   Play,
   Calendar as CalendarIcon,
   Clock,
-  CheckCircle2,
   TrendingUp,
-  Building,
   Layers,
   ArrowRight,
   ShieldCheck,
   Activity,
-  Settings as SettingsIcon,
-  History,
   Check,
   Award,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Lock,
+  Target,
+  BarChart3,
+  CheckCircle2,
+  Cpu
 } from 'lucide-react';
 import AnimatedNumber from '../components/common/AnimatedNumber';
 import { RecommendationBadge } from '../components/common/Badge';
 import { useAuth } from '../context/AuthContext';
 import { formatRole } from '../utils/rbac';
 import {
+  getDashboardSummaryApi,
   getJobsApi,
   getScreeningHistoryApi,
-  getCandidatesApi,
-  getAnalyticsApi,
+  getInterviewsApi,
   getHealthStatusApi
 } from '../services/api';
 
@@ -41,21 +43,31 @@ export default function Dashboard({
   setSelectedCandidateId,
   setSelectedJobForScreening
 }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated, openAuthModal } = useAuth();
 
   // State management for live API data
+  const [summaryData, setSummaryData] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [recentScreenings, setRecentScreenings] = useState([]);
-  const [allScreenings, setAllScreenings] = useState([]);
-  const [analytics, setAnalytics] = useState(null);
+  const [interviews, setInterviews] = useState([]);
   const [health, setHealth] = useState(null);
-  const [totalCandidatesCount, setTotalCandidatesCount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Interactive UI states
-  const [expandedAccordion, setExpandedAccordion] = useState(null);
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
+  const [expandedCategory, setExpandedCategory] = useState(null);
+
+  // Helper for role-restricted navigation
+  const handleNavigate = (tabId, jobData = null) => {
+    if (!isAuthenticated) {
+      openAuthModal('login', '', tabId);
+      return;
+    }
+    if (jobData && setSelectedJobForScreening) {
+      setSelectedJobForScreening(jobData);
+    }
+    setCurrentTab(tabId);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -63,34 +75,45 @@ export default function Dashboard({
     async function loadDashboardData() {
       setIsLoading(true);
       try {
-        const [jobsRes, screeningsRes, allScreeningsRes, candidatesRes, analyticsRes, healthRes] =
-          await Promise.allSettled([
-            getJobsApi(),
-            getScreeningHistoryApi({ limit: 6, sortBy: 'created_at', sortOrder: 'desc' }),
-            getScreeningHistoryApi({ limit: 100 }),
-            getCandidatesApi({ limit: 1 }),
-            getAnalyticsApi(),
-            getHealthStatusApi()
-          ]);
+        // Fetch public aggregate summary & health status (always works for guests and auth)
+        const [summaryRes, healthRes] = await Promise.allSettled([
+          getDashboardSummaryApi(),
+          getHealthStatusApi()
+        ]);
 
         if (isMounted) {
-          if (jobsRes.status === 'fulfilled' && Array.isArray(jobsRes.value)) {
-            setJobs(jobsRes.value);
-          }
-          if (screeningsRes.status === 'fulfilled' && screeningsRes.value?.screenings) {
-            setRecentScreenings(screeningsRes.value.screenings);
-          }
-          if (allScreeningsRes.status === 'fulfilled' && allScreeningsRes.value?.screenings) {
-            setAllScreenings(allScreeningsRes.value.screenings);
-          }
-          if (candidatesRes.status === 'fulfilled' && candidatesRes.value?.total) {
-            setTotalCandidatesCount(candidatesRes.value.total);
-          }
-          if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
-            setAnalytics(analyticsRes.value);
+          if (summaryRes.status === 'fulfilled' && summaryRes.value) {
+            setSummaryData(summaryRes.value);
           }
           if (healthRes.status === 'fulfilled' && healthRes.value) {
             setHealth(healthRes.value);
+          }
+        }
+
+        // If authenticated, also fetch detailed authenticated user records
+        if (isAuthenticated) {
+          const [jobsRes, screeningsRes, interviewsRes] = await Promise.allSettled([
+            getJobsApi(),
+            getScreeningHistoryApi({ limit: 6, sortBy: 'created_at', sortOrder: 'desc' }),
+            getInterviewsApi()
+          ]);
+
+          if (isMounted) {
+            if (jobsRes.status === 'fulfilled' && Array.isArray(jobsRes.value)) {
+              setJobs(jobsRes.value);
+            }
+            if (screeningsRes.status === 'fulfilled' && screeningsRes.value?.screenings) {
+              setRecentScreenings(screeningsRes.value.screenings);
+            }
+            if (interviewsRes.status === 'fulfilled' && Array.isArray(interviewsRes.value)) {
+              setInterviews(interviewsRes.value);
+            }
+          }
+        } else {
+          if (isMounted) {
+            setJobs([]);
+            setRecentScreenings([]);
+            setInterviews([]);
           }
         }
       } catch (err) {
@@ -101,456 +124,542 @@ export default function Dashboard({
     }
 
     loadDashboardData();
-    return () => { isMounted = false; };
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
-  // Recruiter Profile metadata (Authenticated or Guest)
-  const isAdmin = user?.role?.toLowerCase() === 'admin';
-  const recruiterName = user?.full_name || 'HireNova Recruiter';
-  const recruiterRole = user?.role ? formatRole(user.role) : 'Recruiter';
-  const displayName = user?.full_name ? user.full_name.split(' ')[0] : 'Recruiter';
+  // Role detection
+  const userRole = user?.role ? user.role.toLowerCase() : null;
+  const isRecruiter = userRole === 'recruiter';
+  const isHiringManager = userRole === 'hiring_manager';
+  const isHrLead = userRole === 'hr_lead';
+  const isAdmin = userRole === 'admin';
 
-  // Metrics audited strictly from real backend data
-  const activeJobsCount = jobs.filter(j => (j.status || 'Active').toLowerCase() !== 'closed').length;
-  const screenedCount = analytics?.total_screenings ?? recentScreenings.length;
-  const shortlistedCount = analytics?.shortlisted_candidates ?? 0;
-  const totalCandidates = analytics?.total_candidates ?? totalCandidatesCount ?? 0;
-  const avgAtsScore = analytics?.average_ats_score !== undefined ? Math.round(analytics.average_ats_score) : null;
-  const isSystemOnline = health?.status === 'healthy';
+  const displayName = user?.full_name ? user.full_name.split(' ')[0] : 'Guest';
+  const formattedRoleName = user?.role ? formatRole(user.role) : 'Visitor';
 
-  // Compute REAL screening volume by day of week (Sunday to Saturday) from actual database timestamps
-  const realScreeningBarData = useMemo(() => {
-    const days = [
-      { day: 'S', label: 'Sun', count: 0 },
-      { day: 'M', label: 'Mon', count: 0 },
-      { day: 'T', label: 'Tue', count: 0 },
-      { day: 'W', label: 'Wed', count: 0 },
-      { day: 'T', label: 'Thu', count: 0 },
-      { day: 'F', label: 'Fri', count: 0 },
-      { day: 'S', label: 'Sat', count: 0 },
+  // Metrics from verified database statistics only
+  const totalCandidates = Number(summaryData?.total_candidates) || 0;
+  const activeJobsCount = summaryData?.total_jobs !== undefined && summaryData?.total_jobs !== null
+    ? Number(summaryData.total_jobs)
+    : jobs.length;
+  const screenedCount = summaryData?.total_screenings !== undefined && summaryData?.total_screenings !== null
+    ? Number(summaryData.total_screenings)
+    : recentScreenings.length;
+  const shortlistedCount = Number(summaryData?.total_shortlisted) || 0;
+  const avgAtsScore = summaryData?.average_ats_score !== undefined && summaryData?.average_ats_score !== null
+    ? Math.round(Number(summaryData.average_ats_score) || 0)
+    : null;
+  const isSystemOnline = (health?.status === 'healthy') || (summaryData?.ml_engine_status === 'online');
+
+  // Weekly screening activity from genuine database timestamps
+  const weeklyData = useMemo(() => {
+    if (summaryData?.weekly_activity && Array.isArray(summaryData.weekly_activity) && summaryData.weekly_activity.length > 0) {
+      const maxCount = Math.max(...summaryData.weekly_activity.map(d => Number(d?.count) || 0), 1);
+      return summaryData.weekly_activity.map(d => {
+        const count = Number(d?.count) || 0;
+        return {
+          day: d?.day || '',
+          count,
+          isPeak: maxCount > 0 && count === maxCount && count > 0
+        };
+      });
+    }
+    // Fallback 7-day empty skeleton
+    return [
+      { day: 'Mon', count: 0, isPeak: false },
+      { day: 'Tue', count: 0, isPeak: false },
+      { day: 'Wed', count: 0, isPeak: false },
+      { day: 'Thu', count: 0, isPeak: false },
+      { day: 'Fri', count: 0, isPeak: false },
+      { day: 'Sat', count: 0, isPeak: false },
+      { day: 'Sun', count: 0, isPeak: false },
     ];
+  }, [summaryData]);
 
-    if (!allScreenings || allScreenings.length === 0) {
-      return days;
-    }
+  // Pipeline funnel stages from genuine database counts
+  const pipeline = useMemo(() => {
+    const applied = Number(summaryData?.pipeline_stages?.applied ?? totalCandidates) || 0;
+    const screened = Number(summaryData?.pipeline_stages?.screened ?? screenedCount) || 0;
+    const shortlisted = Number(summaryData?.pipeline_stages?.shortlisted ?? shortlistedCount) || 0;
+    const interviewed = Number(summaryData?.pipeline_stages?.interviewed ?? interviews.length) || 0;
 
-    allScreenings.forEach(item => {
-      if (item.created_at) {
-        const date = new Date(item.created_at);
-        if (!isNaN(date.getTime())) {
-          const dayIndex = date.getDay(); // 0 is Sunday, 6 is Saturday
-          days[dayIndex].count += 1;
-        }
+    return [
+      {
+        id: 'applied',
+        label: 'Applied',
+        count: applied,
+        color: 'from-emerald-700 to-emerald-500',
+        textColor: 'text-[#34D399]',
+        bgSubtle: 'bg-emerald-950/40'
+      },
+      {
+        id: 'screened',
+        label: 'Screened',
+        count: screened,
+        color: 'from-emerald-600 to-teal-400',
+        textColor: 'text-teal-300',
+        bgSubtle: 'bg-teal-950/40'
+      },
+      {
+        id: 'shortlisted',
+        label: 'Shortlisted',
+        count: shortlisted,
+        color: 'from-teal-500 to-emerald-400',
+        textColor: 'text-emerald-300',
+        bgSubtle: 'bg-emerald-950/50'
+      },
+      {
+        id: 'interviewed',
+        label: 'Interviewing',
+        count: interviewed,
+        color: 'from-emerald-500 to-[#34D399]',
+        textColor: 'text-[#A7F3D0]',
+        bgSubtle: 'bg-emerald-950/60'
       }
-    });
+    ];
+  }, [summaryData, totalCandidates, screenedCount, shortlistedCount, interviews]);
 
-    const maxCount = Math.max(...days.map(d => d.count));
-    return days.map(d => ({
-      ...d,
-      isPeak: maxCount > 0 && d.count === maxCount
-    }));
-  }, [allScreenings]);
-
-  // Compute top REAL recruitment categories from backend analytics
-  const realCategories = useMemo(() => {
-    if (!analytics?.category_distribution || !Array.isArray(analytics.category_distribution)) {
-      return [];
+  // Categories from genuine DB distribution (safely handles either 'name' or 'category' key)
+  const categoriesList = useMemo(() => {
+    if (summaryData?.category_distribution && Array.isArray(summaryData.category_distribution)) {
+      return summaryData.category_distribution.slice(0, 5).map(item => {
+        const catName = String(item?.name || item?.category || 'General');
+        return {
+          id: catName.toLowerCase().replace(/\s+/g, '_'),
+          name: catName,
+          count: Number(item?.count) || 0
+        };
+      });
     }
-    // Take top 4 categories from real dataset
-    return analytics.category_distribution.slice(0, 4).map(item => {
-      const matchingJobs = jobs.filter(j => 
-        (j.department && j.department.toLowerCase().includes(item.category.toLowerCase())) ||
-        (j.title && j.title.toLowerCase().includes(item.category.toLowerCase()))
-      );
-      return {
-        id: item.category.toLowerCase().replace(/\s+/g, '_'),
-        name: item.category,
-        count: item.count,
-        matchingOpenings: matchingJobs.length
-      };
-    });
-  }, [analytics, jobs]);
+    return [];
+  }, [summaryData]);
 
-  // Set default expanded accordion when realCategories load
+  // Set initial expanded category
   useEffect(() => {
-    if (realCategories.length > 0 && !expandedAccordion) {
-      setExpandedAccordion(realCategories[0].id);
+    if (categoriesList.length > 0 && !expandedCategory) {
+      setExpandedCategory(categoriesList[0].id);
     }
-  }, [realCategories, expandedAccordion]);
-
-  // Current calendar day for the timeline
-  const todayDate = new Date();
-  const currentDayNum = todayDate.getDate();
+  }, [categoriesList, expandedCategory]);
 
   return (
-    <div className="space-y-6 lg:space-y-8 pb-12 transition-all overflow-x-hidden">
-      
+    <div className="space-y-6 lg:space-y-8 pb-12 transition-all overflow-x-hidden min-w-0">
+
       {/* =========================================================================
-          1. WELCOME HEADING & RECRUITMENT KPI ROW (PEOPLEXIO COMPOSITION)
-          No horizontal overflow, full visibility on common desktop widths
+          1. HEADER / HERO WELCOME SECTION
+          Distinguishes authenticated user workspace from public visitor landing
+          Styled with Obsidian base, Emerald highlights, and metallic depth.
           ========================================================================= */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-2 min-w-0">
-        
-        {/* Left: Greeting & Verified Real Metric Badges */}
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1C1739] dark:text-white tracking-tight font-display truncate">
-              Welcome in, <span className="text-[#5B47E0] dark:text-[#8B5CF6]">{displayName}</span>
-            </h1>
-            {isAdmin && (
-              <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-[#ECE9FD] dark:bg-[#5B47E0]/20 text-[#5B47E0] dark:text-[#A78BFA] border border-[#5B47E0]/20 shrink-0">
-                Admin Workspace
-              </span>
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 lg:p-8 bg-gradient-to-br from-[#0B1210] via-[#0E1A16] to-[#07100D] border border-emerald-500/20 shadow-2xl text-white">
+        {/* Decorative emerald background glows */}
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-[#059669]/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-16 w-60 h-60 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6 min-w-0">
+          {/* Left Column: Greeting & Value Proposition */}
+          <div className="max-w-3xl min-w-0">
+            {isAuthenticated ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/50 text-[#A7F3D0] border border-emerald-500/30 flex items-center gap-1.5 shadow-xs">
+                    <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                    {formattedRoleName} Workspace
+                  </span>
+                  {isAdmin && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      System Administrator
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight font-display break-words">
+                  Welcome in, <span className="text-[#34D399]">{displayName}</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-300 mt-2 font-medium leading-relaxed max-w-2xl">
+                  {isRecruiter && "Ready to screen resumes, manage candidate shortlists, and match talent to active requisitions."}
+                  {isHiringManager && "Review shortlisted candidates, evaluate technical fits, and coordinate interview rounds."}
+                  {isHrLead && "Monitor talent acquisition performance, evaluate pipeline throughput, and audit screening reports."}
+                  {isAdmin && "Oversee system administration, candidate indexes, screening models, and user role permissions."}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/50 text-[#A7F3D0] border border-emerald-500/30 mb-3 shadow-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                  <span>Next-Gen Recruitment Intelligence</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight font-display break-words">
+                  HireNova <span className="text-[#34D399]">Recruitment Platform</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-300 mt-2 font-medium leading-relaxed max-w-2xl">
+                  Intelligent candidate ranking and automated resume screening powered by TF-IDF semantic similarity, Scikit-learn classification, and 60/40 weighted ATS precision.
+                </p>
+              </>
             )}
-          </div>
-          <p className="text-xs sm:text-sm font-medium text-[#736B92] dark:text-[#94A3B8] mt-1.5">
-            Here's what's happening with your recruitment pipeline today.
-          </p>
 
-          {/* Sub-row of verified real metric pills (Audited: No fabricated percentage claims) */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 mt-3.5">
-            {/* Qualified Shortlist Ratio */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1C1739] dark:bg-[#0E1526] text-white text-xs font-bold shadow-xs">
-              <span className="text-white/70 font-normal">Shortlist:</span>
-              <span>
-                {totalCandidates > 0
-                  ? `${shortlistedCount} Candidates (${((shortlistedCount / totalCandidates) * 100).toFixed(1)}%)`
-                  : 'Not available'}
-              </span>
-            </div>
-
-            {/* Average ATS Match Score */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#5B47E0] text-white text-xs font-bold shadow-xs shadow-[#5B47E0]/25">
-              <span className="text-white/80 font-normal">Avg Match:</span>
-              <span>{avgAtsScore !== null ? `${avgAtsScore}% ATS` : 'Not available'}</span>
-            </div>
-
-            {/* Real Pipeline Openings */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#0E1526] border border-[#EAE7F4] dark:border-white/[0.08] text-[#1C1739] dark:text-white text-xs font-semibold shadow-xs">
-              <span className="text-[#736B92] dark:text-slate-400 font-normal">Active Roles:</span>
-              <span className="text-[#5B47E0] dark:text-[#A78BFA] font-bold">{activeJobsCount}</span>
-            </div>
-
-            {/* Verified ML Service Status */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#0E1526] border border-[#EAE7F4] dark:border-white/[0.08] text-[#1C1739] dark:text-white text-xs font-semibold shadow-xs">
-              <span className={`w-2 h-2 rounded-full ${health?.model_loaded ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-[#736B92] dark:text-slate-400 font-normal">ML Engine:</span>
-              <span className={health?.model_loaded ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-amber-500 font-bold'}>
-                {health?.model_loaded ? 'Online' : 'Offline'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Clean Horizontal Row of 4 Core Recruitment KPIs (Connected to Real Backend) */}
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6 bg-white/80 dark:bg-[#0E1526]/80 p-3 sm:px-6 sm:py-3.5 rounded-2xl border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm backdrop-blur-md min-w-0">
-          
-          {/* Candidates */}
-          <div
-            onClick={() => setCurrentTab('rankings')}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none min-w-[100px]"
-            title="View candidate rankings"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#ECE9FD] dark:bg-[#5B47E0]/20 text-[#5B47E0] dark:text-[#A78BFA] flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div>
-              <div className="text-lg sm:text-2xl font-black text-[#1C1739] dark:text-white tabular-nums tracking-tight font-display">
-                <AnimatedNumber value={totalCandidates} />
+            {/* Architecture / Formula Status Pills */}
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-white/10 text-xs">
+              {/* Formula Pill */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
+                <Target className="w-3.5 h-3.5 text-[#34D399]" />
+                <span className="text-slate-300">ATS Formula:</span>
+                <span className="font-bold text-white">40% JD + 60% Skills</span>
               </div>
-              <div className="text-[10px] sm:text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                Candidates
+
+              {/* Threshold Pill */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-slate-300">Shortlist:</span>
+                <span className="font-bold text-emerald-300">Score &ge; 50%</span>
+              </div>
+
+              {/* ML Engine Status */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white font-semibold border border-emerald-500/20 backdrop-blur-sm">
+                <span className={`w-2 h-2 rounded-full ${isSystemOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                <span className="text-slate-300">ML Engine:</span>
+                <span className={`font-bold ${isSystemOnline ? 'text-emerald-300' : 'text-amber-300'}`}>
+                  {isSystemOnline ? 'Online' : 'Standby'}
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="hidden sm:block w-px h-8 bg-[#EAE7F4] dark:bg-white/[0.08]" />
+          {/* Right Column: Role-Appropriate Primary CTAs (only for authenticated users) */}
+          {isAuthenticated && (
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-0">
+              {/* Recruiter / Admin: Start Screening CTA */}
+              {(isRecruiter || isAdmin) && (
+                <button
+                  id="dashboard-cta-screen"
+                  onClick={() => handleNavigate('screening')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Start Screening</span>
+                </button>
+              )}
 
-          {/* Active Openings */}
-          <div
-            onClick={() => setCurrentTab('jobs')}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none min-w-[90px]"
-            title="View active job postings"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-50 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div>
-              <div className="text-lg sm:text-2xl font-black text-[#1C1739] dark:text-white tabular-nums tracking-tight font-display">
-                <AnimatedNumber value={activeJobsCount} />
-              </div>
-              <div className="text-[10px] sm:text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                Openings
-              </div>
-            </div>
-          </div>
+              {/* Recruiter / Admin: Post Job */}
+              {(isRecruiter || isAdmin) && (
+                <button
+                  id="dashboard-cta-jobs"
+                  onClick={() => handleNavigate('jobs')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                >
+                  <Briefcase className="w-4 h-4 text-[#34D399]" />
+                  <span>Manage Jobs</span>
+                </button>
+              )}
 
-          <div className="hidden sm:block w-px h-8 bg-[#EAE7F4] dark:bg-white/[0.08]" />
+              {/* Hiring Manager CTAs */}
+              {isHiringManager && (
+                <>
+                  <button
+                    id="dashboard-cta-shortlist"
+                    onClick={() => handleNavigate('shortlist')}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                  >
+                    <Star className="w-4 h-4 text-amber-300 fill-amber-300" />
+                    <span>Review Shortlist</span>
+                  </button>
+                  <button
+                    id="dashboard-cta-interviews"
+                    onClick={() => handleNavigate('interviews')}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                  >
+                    <CalendarIcon className="w-4 h-4 text-[#34D399]" />
+                    <span>Interviews Pipeline</span>
+                  </button>
+                </>
+              )}
 
-          {/* Resumes Screened */}
-          <div
-            onClick={() => setCurrentTab('screening')}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none min-w-[90px]"
-            title="Resume screening activity"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-              <FileSearch className="w-4 h-4 sm:w-5 sm:h-5" />
+              {/* HR Lead CTAs */}
+              {isHrLead && (
+                <>
+                  <button
+                    id="dashboard-cta-analytics"
+                    onClick={() => handleNavigate('analytics')}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-sm shadow-lg shadow-emerald-700/30 transition-all hover:scale-[1.02] active:scale-[0.98] min-h-[44px]"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    <span>View Analytics</span>
+                  </button>
+                  <button
+                    id="dashboard-cta-reports"
+                    onClick={() => handleNavigate('reports')}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-emerald-500/20 transition-all min-h-[42px]"
+                  >
+                    <FileSearch className="w-4 h-4 text-[#34D399]" />
+                    <span>Audit Reports</span>
+                  </button>
+                </>
+              )}
             </div>
-            <div>
-              <div className="text-lg sm:text-2xl font-black text-[#1C1739] dark:text-white tabular-nums tracking-tight font-display">
-                <AnimatedNumber value={screenedCount} />
-              </div>
-              <div className="text-[10px] sm:text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                Screened
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden sm:block w-px h-8 bg-[#EAE7F4] dark:bg-white/[0.08]" />
-
-          {/* Shortlisted Candidates */}
-          <div
-            onClick={() => setCurrentTab('shortlist')}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none min-w-[90px]"
-            title="View shortlisted candidates"
-          >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-              <Star className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div>
-              <div className="text-lg sm:text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums tracking-tight font-display">
-                <AnimatedNumber value={shortlistedCount} />
-              </div>
-              <div className="text-[10px] sm:text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                Shortlisted
-              </div>
-            </div>
-          </div>
-
+          )}
         </div>
       </div>
 
       {/* =========================================================================
-          2. MAIN BALANCED MULTI-COLUMN DASHBOARD GRID
-          Col 1: Spotlight & Pods | Col 2: Real Trends & Calendar | Col 3: Tracker & Screenings
+          2. FOUR CORE RECRUITMENT KPI CARDS (RESPONSIVE GRID)
+          Desktop: 4 columns | Tablet: 2 columns | Mobile: 2 columns
+          Verified genuine database statistics only
           ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-w-0">
-
-        {/* -----------------------------------------------------------------------
-            COLUMN 1: RECRUITER SPOTLIGHT & REAL CATEGORIES (Span 4 lg, Span 3 xl)
-            ----------------------------------------------------------------------- */}
-        <div className="lg:col-span-4 xl:col-span-3 space-y-6 flex flex-col justify-between min-w-0">
-          
-          {/* Recruiter Spotlight Card (Peoplexio Avatar Profile) */}
-          <div className="relative overflow-hidden rounded-[26px] p-6 text-white shadow-lg transition-all duration-300 bg-gradient-to-b from-[#6956EC] via-[#5B47E0] to-[#4D3AD1] dark:from-[#1D1B48] dark:via-[#131731] dark:to-[#0D1124] dark:border dark:border-white/[0.08]">
-            <div className="absolute top-0 right-0 -mr-8 -mt-8 w-36 h-36 rounded-full bg-white/10 dark:bg-[#5B47E0]/20 blur-xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 rounded-full bg-[#5B47E0]/30 blur-2xl pointer-events-none" />
-
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="relative">
-                  {user?.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={recruiterName}
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover shadow-md ring-4 ring-white/20"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 dark:bg-white/10 text-white flex items-center justify-center font-black text-2xl shadow-md ring-4 ring-white/20 backdrop-blur-sm">
-                      {recruiterName.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <span className={`absolute bottom-1 right-1 w-3.5 h-3.5 rounded-full ring-2 ring-[#5B47E0] dark:ring-[#0D1124] ${isSystemOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                </div>
-
-                {/* Active Roles Badge */}
-                <div className="px-3 py-1.5 rounded-xl bg-white/15 dark:bg-white/[0.07] border border-white/20 text-right backdrop-blur-md">
-                  <div className="text-[11px] font-bold text-white/90">
-                    {activeJobsCount} {activeJobsCount === 1 ? 'Role' : 'Roles'}
-                  </div>
-                  <div className="text-[9px] text-white/70 uppercase tracking-wider font-semibold">
-                    Open Pipeline
-                  </div>
-                </div>
-              </div>
-
-              <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight font-display truncate">
-                {recruiterName}
-              </h3>
-              <p className="text-xs text-white/80 font-medium mt-0.5 truncate">
-                {recruiterRole} {user?.company_name ? `• ${user.company_name}` : ''}
-              </p>
-
-              <div className="mt-5 pt-3.5 border-t border-white/15 flex items-center justify-between text-xs">
-                <span className="text-white/80 text-[11px]">
-                  Engine: <strong className={isSystemOnline ? 'text-emerald-300 font-bold' : 'text-amber-300 font-bold'}>
-                    {isSystemOnline ? 'Online' : 'Offline'}
-                  </strong>
-                </span>
-                <button
-                  onClick={() => setCurrentTab('settings')}
-                  className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold transition-colors text-[11px]"
-                >
-                  Preferences
-                </button>
-              </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 min-w-0">
+        
+        {/* KPI 1: Total Candidates */}
+        <div
+          id="kpi-candidates-card"
+          onClick={() => handleNavigate('rankings')}
+          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          title={isAuthenticated ? "View Candidate Rankings" : "Sign in to view candidates"}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+              Candidates
+            </span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/40 border border-emerald-500/25 text-[#34D399] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-
-          {/* Real Dataset Categories / Recruitment Pods (Audited: Using Real Backend Distribution) */}
-          <div className="p-5 rounded-[26px] bg-white dark:bg-[#0E1526]/80 border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm flex-1 flex flex-col justify-between min-w-0">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-[#F0EDF8] dark:border-white/[0.06]">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-[#1C1739] dark:text-white flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-[#5B47E0]" />
-                  Talent Pools
-                </h4>
-                <span className="text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                  {realCategories.length} Categories
-                </span>
-              </div>
-
-              <div className="divide-y divide-[#F0EDF8] dark:divide-white/[0.06] mt-1">
-                {realCategories.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-[#736B92] dark:text-slate-400">
-                    No categories available yet.
-                  </div>
-                ) : (
-                  realCategories.map((dept) => {
-                    const isExpanded = expandedAccordion === dept.id;
-                    return (
-                      <div key={dept.id} className="py-2.5">
-                        <button
-                          onClick={() => setExpandedAccordion(isExpanded ? null : dept.id)}
-                          className="w-full flex items-center justify-between text-left group"
-                        >
-                          <span className="text-xs font-bold text-[#1C1739] dark:text-white group-hover:text-[#5B47E0] dark:group-hover:text-[#A78BFA] transition-colors truncate pr-2">
-                            {dept.name}
-                          </span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[11px] font-semibold text-[#736B92] dark:text-slate-400">
-                              {dept.count}
-                            </span>
-                            <ChevronDown className={`w-3.5 h-3.5 text-[#736B92] dark:text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                          </div>
-                        </button>
-
-                        {isExpanded && (
-                          <div className="mt-2 text-[11px] text-[#736B92] dark:text-slate-400 animate-dropdown">
-                            <div className="flex items-center justify-between font-semibold text-[#1C1739] dark:text-slate-200 mb-1">
-                              <span>Active Openings:</span>
-                              <span className="text-[#5B47E0] dark:text-[#A78BFA] font-bold">
-                                {dept.matchingOpenings > 0 ? `${dept.matchingOpenings} Open` : 'None'}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-[#736B92] dark:text-slate-400">
-                              {dept.count} evaluated candidate resumes indexed in talent corpus.
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+              <AnimatedNumber value={totalCandidates} />
             </div>
-
-            <button
-              onClick={() => setCurrentTab('rankings')}
-              className="mt-4 w-full py-2 px-3 rounded-xl bg-[#F4F3FA] dark:bg-white/[0.05] hover:bg-[#ECE9FD] dark:hover:bg-[#5B47E0]/20 text-[#5B47E0] dark:text-[#A78BFA] font-bold text-xs text-center transition-colors"
-            >
-              Explore Candidate Pools &rarr;
-            </button>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+              <span>Talent corpus indexed</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#34D399]" />
+            </div>
           </div>
-
         </div>
 
-        {/* -----------------------------------------------------------------------
-            COLUMN 2: REAL SCREENING TRENDS & PIPELINE SCHEDULE (Span 8 lg, Span 5 xl)
-            ----------------------------------------------------------------------- */}
-        <div className="lg:col-span-8 xl:col-span-5 space-y-6 min-w-0">
-          
-          {/* Hiring Progress Chart (Audited: Using Real Database Screening History) */}
-          <div className="p-5 sm:p-6 rounded-[26px] bg-white dark:bg-[#0E1526]/80 border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm min-w-0">
-            <div className="flex items-center justify-between pb-2">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-sm text-[#1C1739] dark:text-white">
-                  <span>Hiring Progress</span>
+        {/* KPI 2: Active Openings */}
+        <div
+          id="kpi-jobs-card"
+          onClick={() => handleNavigate('jobs')}
+          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          title={isAuthenticated ? "View Active Jobs" : "Sign in to view jobs"}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+              Active Jobs
+            </span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-950/40 border border-teal-500/25 text-teal-300 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+              <AnimatedNumber value={activeJobsCount} />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+              <span>Open requisitions</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-teal-300" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Resumes Screened */}
+        <div
+          id="kpi-screened-card"
+          onClick={() => handleNavigate('screening')}
+          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          title={isAuthenticated ? "View Screening History" : "Sign in to view screenings"}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+              Resumes Screened
+            </span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-[#34D399] flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <FileSearch className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-[#F8FAFC] tabular-nums tracking-tight font-display">
+              <AnimatedNumber value={screenedCount} />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+              <span>Evaluated by ATS</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-[#34D399]" />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Shortlisted Candidates */}
+        <div
+          id="kpi-shortlist-card"
+          onClick={() => handleNavigate('shortlist')}
+          className="p-4 sm:p-5 rounded-2xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm hover:shadow-lg hover:shadow-emerald-950/30 hover:border-[#34D399]/40 transition-all cursor-pointer group flex flex-col justify-between min-w-0"
+          title={isAuthenticated ? "View Shortlist" : "Sign in to view shortlist"}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-[#94A3A8] uppercase tracking-wider">
+              Shortlisted
+            </span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-950/40 border border-amber-500/25 text-amber-300 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+              <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl sm:text-3xl font-black text-amber-400 tabular-nums tracking-tight font-display">
+              <AnimatedNumber value={shortlistedCount} />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[#94A3A8] mt-1">
+              <span>Score &ge; 50.0%</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-amber-400" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          3. RECRUITMENT PIPELINE FUNNEL SECTION
+          Visual progress: Applied -> Screened -> Shortlisted -> Interviewing
+          ========================================================================= */}
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 text-[#F8FAFC]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/[0.08] gap-2">
+          <div>
+            <h3 className="font-extrabold text-sm sm:text-base text-[#F8FAFC] flex items-center gap-2 font-display">
+              <BarChart3 className="w-4 h-4 text-[#34D399]" />
+              Recruitment Pipeline Progress
+            </h3>
+            <p className="text-xs text-[#94A3A8] mt-0.5">
+              Live funnel stages tracked from initial corpus intake through ATS screening to interview rounds.
+            </p>
+          </div>
+          <div className="text-xs font-semibold text-[#34D399] flex items-center gap-1.5 shrink-0">
+            <span>Overall Conversion:</span>
+            <span className="font-bold">
+              {totalCandidates > 0 ? `${((shortlistedCount / totalCandidates) * 100).toFixed(1)}%` : '0%'}
+            </span>
+          </div>
+        </div>
+
+        {/* Funnel Stage Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4">
+          {pipeline.map((stage, idx) => (
+            <div
+              key={stage.id}
+              className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-[#EAE7F4] dark:border-white/[0.06] ${stage.bgSubtle} flex flex-col justify-between relative overflow-hidden`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-extrabold uppercase tracking-wider ${stage.textColor}`}>
+                  Stage 0{idx + 1}
+                </span>
+                <span className="text-[10px] font-semibold text-[#736B92] dark:text-slate-400">
+                  {stage.label}
+                </span>
+              </div>
+              <div className="mt-3">
+                <div className="text-xl sm:text-2xl font-black text-[#1C1739] dark:text-white tabular-nums font-display">
+                  <AnimatedNumber value={stage.count} />
                 </div>
+                <div className="text-[10px] text-[#736B92] dark:text-slate-400 mt-0.5 truncate">
+                  {stage.count === 0 ? 'No candidates yet' : `${stage.count} in this phase`}
+                </div>
+              </div>
+              {/* Progress bar line */}
+              <div className="w-full bg-slate-200 dark:bg-white/[0.08] h-1.5 rounded-full mt-3 overflow-hidden">
+                <div
+                  className={`h-full bg-gradient-to-r ${stage.color} rounded-full transition-all duration-700`}
+                  style={{
+                    width: totalCandidates > 0 ? `${Math.min(100, Math.max(8, (stage.count / totalCandidates) * 100))}%` : '8%'
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* =========================================================================
+          4. MAIN 2-COLUMN BALANCED ANALYTICS SECTION
+          Col 1 (7 cols on lg): 7-Day Screening Activity Chart
+          Col 2 (5 cols on lg): Compact ATS Matching Overview & Scoring Formula
+          ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-w-0">
+        
+        {/* Left Column: 7-Day Screening Activity Chart */}
+        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="min-w-0 pr-2">
+                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-[#34D399]" />
+                  <span>Hiring & Screening Activity</span>
+                </h4>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-2xl sm:text-3xl font-black text-[#1C1739] dark:text-white tracking-tight font-display">
+                  <span className="text-xl sm:text-2xl font-black text-[#F8FAFC] tracking-tight font-display">
                     <AnimatedNumber value={screenedCount} />
                   </span>
-                  <span className="text-xs font-semibold text-[#736B92] dark:text-slate-400">
-                    Total Resumes Evaluated
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>
-                    {allScreenings.length > 0 ? `${allScreenings.length} screening records active` : 'Awaiting initial batch'}
+                  <span className="text-[11px] font-semibold text-[#94A3A8]">
+                    Total Evaluations Recorded
                   </span>
                 </div>
               </div>
-
               <button
-                onClick={() => setCurrentTab('analytics')}
-                className="w-8 h-8 rounded-full bg-[#F4F3FA] dark:bg-white/[0.05] hover:bg-[#ECE9FD] dark:hover:bg-[#5B47E0]/20 text-[#5B47E0] dark:text-[#A78BFA] flex items-center justify-center transition-colors shrink-0"
-                title="View Analytics"
+                onClick={() => handleNavigate('analytics')}
+                className="w-8 h-8 rounded-full bg-[#131F1B] hover:bg-[#182A24] text-[#34D399] flex items-center justify-center transition-colors shrink-0 border border-emerald-500/15"
+                title="View Full Analytics"
               >
                 <ArrowUpRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Sunday - Saturday Real Bar Chart with Peak Pill (Peoplexio Style) */}
-            <div className="mt-5 pt-4 border-t border-[#F0EDF8] dark:border-white/[0.06]">
-              {allScreenings.length === 0 ? (
-                <div className="py-10 text-center text-xs text-[#736B92] dark:text-slate-400">
-                  <p>No screening activity recorded yet.</p>
+            {/* 7-Day Interactive Activity Bar Chart */}
+            <div className="mt-4 pt-2">
+              {weeklyData.every(d => d.count === 0) ? (
+                <div className="py-10 text-center text-xs text-[#94A3A8]">
+                  <p className="font-medium">No screening activity recorded in the past 7 days.</p>
+                  <p className="text-[11px] text-[#94A3A8]/70 mt-1">
+                    Upload candidate resumes against job descriptions to generate live trends.
+                  </p>
                   <button
-                    onClick={() => setCurrentTab('screening')}
-                    className="mt-2 text-[#5B47E0] font-bold hover:underline"
+                    onClick={() => handleNavigate('screening')}
+                    className="mt-3 text-[#34D399] font-bold text-xs hover:underline inline-flex items-center gap-1"
                   >
-                    + Screen resumes to generate trends
+                    <span>+ Screen resumes to generate activity</span>
                   </button>
                 </div>
               ) : (
-                <div className="h-36 flex items-end justify-between gap-1.5 sm:gap-3 px-1 sm:px-2">
-                  {realScreeningBarData.map((bar, idx) => {
-                    const maxVal = Math.max(...realScreeningBarData.map(b => b.count), 1);
+                <div className="h-32 sm:h-40 flex items-end justify-between gap-1.5 sm:gap-3 px-1 sm:px-3">
+                  {weeklyData.map((bar, idx) => {
+                    const maxVal = Math.max(...weeklyData.map(b => b.count), 1);
                     const heightPercent = bar.count > 0 ? Math.min(100, Math.max(18, (bar.count / maxVal) * 100)) : 8;
                     const isHovered = hoveredBarIndex === idx;
 
                     return (
                       <div
-                        key={bar.label}
+                        key={`${bar.day}-${idx}`}
                         onMouseEnter={() => setHoveredBarIndex(idx)}
                         onMouseLeave={() => setHoveredBarIndex(null)}
-                        className="flex-1 flex flex-col items-center gap-2 group cursor-pointer relative"
+                        className="flex-1 flex flex-col items-center gap-1.5 group cursor-pointer relative"
                       >
-                        {/* Tooltip on Hover / Peak */}
+                        {/* Tooltip on Hover or Peak */}
                         {(isHovered || (bar.isPeak && hoveredBarIndex === null)) && (
-                          <div className="absolute -top-7 px-2 py-0.5 rounded-md bg-[#5B47E0] text-white text-[10px] font-bold shadow-md whitespace-nowrap animate-dropdown z-20">
-                            {bar.count} Screened
+                          <div className="absolute -top-7 px-2 py-0.5 rounded-md bg-[#059669] text-white text-[10px] font-bold shadow-md whitespace-nowrap z-20 animate-dropdown border border-emerald-400/30">
+                            {bar.count} {bar.count === 1 ? 'Resume' : 'Resumes'}
                           </div>
                         )}
 
                         {/* Bar Pillar */}
-                        <div className="w-full max-w-[28px] h-32 flex items-end justify-center rounded-full bg-[#F4F3FA] dark:bg-white/[0.04] p-0.5">
+                        <div className="w-full max-w-[24px] sm:max-w-[32px] h-24 sm:h-32 flex items-end justify-center rounded-full bg-[#131F1B] p-0.5">
                           <div
                             style={{ height: `${heightPercent}%` }}
                             className={`w-full rounded-full transition-all duration-300 ${
                               bar.count > 0
                                 ? bar.isPeak || isHovered
-                                  ? 'bg-[#5B47E0] dark:bg-[#705CF6] shadow-sm shadow-[#5B47E0]/30'
-                                  : 'bg-[#9284F4] dark:bg-[#4E39D2]/70 group-hover:bg-[#5B47E0]'
-                                : 'bg-slate-200 dark:bg-white/[0.08]'
+                                  ? 'bg-gradient-to-t from-[#059669] to-[#34D399] shadow-sm shadow-emerald-500/30'
+                                  : 'bg-[#059669] group-hover:bg-[#34D399]'
+                                : 'bg-white/[0.06]'
                             }`}
                           />
                         </div>
 
                         {/* Day Label */}
-                        <span className="text-[10px] sm:text-[11px] font-bold text-[#736B92] dark:text-slate-400 group-hover:text-[#5B47E0]">
+                        <span className={`text-[10px] sm:text-[11px] font-bold transition-colors ${
+                          bar.count > 0 ? 'text-[#F8FAFC]' : 'text-[#94A3A8]/70'
+                        }`}>
                           {bar.day}
                         </span>
                       </div>
@@ -561,133 +670,50 @@ export default function Dashboard({
             </div>
           </div>
 
-          {/* Recruitment Pipeline & Scheduled Reviews (Calendar Timeline) */}
-          <div className="p-5 sm:p-6 rounded-[26px] bg-white dark:bg-[#0E1526]/80 border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm min-w-0">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F0EDF8] dark:border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-[#5B47E0]" />
-                <h4 className="font-bold text-xs uppercase tracking-wider text-[#1C1739] dark:text-white">
-                  Upcoming Pipeline Calendar
-                </h4>
-              </div>
-              <button
-                onClick={() => setCurrentTab('interviews')}
-                className="text-xs font-bold text-[#5B47E0] dark:text-[#A78BFA] hover:underline"
-              >
-                View Interviews &rarr;
-              </button>
-            </div>
-
-            {/* Days of Week Strip */}
-            <div className="grid grid-cols-6 gap-1.5 sm:gap-2 text-center mt-3 pt-1">
-              {[0, 1, 2, 3, 4, 5].map(offset => {
-                const d = new Date();
-                d.setDate(todayDate.getDate() + offset);
-                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-                const dayNum = d.getDate();
-                const isSelected = selectedCalendarDay === dayNum || (selectedCalendarDay === null && offset === 0);
-
-                return (
-                  <button
-                    key={dayNum}
-                    onClick={() => setSelectedCalendarDay(dayNum)}
-                    className={`py-2 px-1 rounded-2xl transition-all ${
-                      isSelected
-                        ? 'bg-[#5B47E0] text-white shadow-sm font-bold'
-                        : 'hover:bg-[#F4F3FA] dark:hover:bg-white/[0.05] text-[#736B92] dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="text-[10px] font-medium opacity-80">{dayName}</div>
-                    <div className="text-xs sm:text-sm font-extrabold mt-0.5">{dayNum}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Candidate Review Events */}
-            <div className="space-y-2.5 mt-4">
-              <div
-                onClick={() => setCurrentTab('interviews')}
-                className="p-3 rounded-2xl bg-[#ECE9FD]/60 dark:bg-[#5B47E0]/15 border border-[#5B47E0]/20 flex items-center justify-between cursor-pointer hover:bg-[#ECE9FD] transition-colors"
-              >
-                <div className="min-w-0 pr-2">
-                  <div className="text-[10px] font-bold text-[#5B47E0] dark:text-[#A78BFA]">
-                    10:30 am — Technical Round
-                  </div>
-                  <div className="text-xs font-bold text-[#1C1739] dark:text-white mt-0.5 truncate">
-                    Candidate David Miller (Senior Python Role)
-                  </div>
-                  <div className="text-[11px] text-[#736B92] dark:text-slate-400 mt-0.5">
-                    Hiring Manager: Alex Morgan
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-white dark:bg-[#0E1526] text-[#5B47E0] text-[10px] font-bold shadow-xs shrink-0">
-                  Scheduled
-                </span>
-              </div>
-
-              <div
-                onClick={() => setCurrentTab('interviews')}
-                className="p-3 rounded-2xl bg-[#FFF8E6] dark:bg-amber-500/10 border border-amber-300/40 dark:border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-100/60 transition-colors"
-              >
-                <div className="min-w-0 pr-2">
-                  <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                    02:00 pm — System Architecture
-                  </div>
-                  <div className="text-xs font-bold text-[#1C1739] dark:text-white mt-0.5 truncate">
-                    Candidate Sophia Chen (Machine Learning Lead)
-                  </div>
-                  <div className="text-[11px] text-[#736B92] dark:text-slate-400 mt-0.5">
-                    Interviewer: Dr. Sarah Vance
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full bg-white dark:bg-[#0E1526] text-amber-600 text-[10px] font-bold shadow-xs shrink-0">
-                  Confirmed
-                </span>
-              </div>
-            </div>
+          <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between text-xs text-[#94A3A8]">
+            <span>Screening frequency: <strong className="text-[#F8FAFC]">Real-time DB query</strong></span>
+            <button
+              onClick={() => handleNavigate('screening')}
+              className="text-[#34D399] font-bold hover:underline"
+            >
+              Evaluate New Batch &rarr;
+            </button>
           </div>
-
         </div>
 
-        {/* -----------------------------------------------------------------------
-            COLUMN 3: AUDITED EFFICIENCY DIAL & RECENT SCREENINGS (Span 12 lg, Span 4 xl)
-            ----------------------------------------------------------------------- */}
-        <div className="lg:col-span-12 xl:col-span-4 space-y-6 flex flex-col justify-between min-w-0">
-          
-          {/* Screening Efficiency / Real ATS Match Tracker */}
-          <div className="p-5 sm:p-6 rounded-[26px] bg-white dark:bg-[#0E1526]/80 border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm min-w-0">
-            <div className="flex items-center justify-between pb-2">
-              <span className="font-bold text-xs uppercase tracking-wider text-[#1C1739] dark:text-white">
-                ATS Match Scoring
+        {/* Right Column: Compact ATS Matching Overview & Scoring Formula */}
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-[#34D399]" />
+                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                  ATS Matching Overview
+                </h4>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/40 text-[#A7F3D0] border border-emerald-500/25">
+                40/60 Model
               </span>
-              <button
-                onClick={() => setCurrentTab('screening')}
-                className="w-7 h-7 rounded-full bg-[#F4F3FA] dark:bg-white/[0.05] hover:bg-[#ECE9FD] dark:hover:bg-[#5B47E0]/20 text-[#5B47E0] dark:text-[#A78BFA] flex items-center justify-center transition-colors shrink-0"
-                title="Start Screening"
-              >
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
             </div>
 
-            <div className="flex items-center justify-around mt-3 min-w-0">
-              {/* Circular Gauge Ring with Real Average ATS Score */}
-              <div className="relative flex items-center justify-center w-28 h-28 shrink-0">
+            {/* Gauge & Formula Breakdown */}
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-4 mt-4 min-w-0">
+              {/* Circular Gauge Ring with Genuine Average ATS Score */}
+              <div className="relative flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32 shrink-0">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle
                     cx="50"
                     cy="50"
                     r="40"
-                    stroke="currentColor"
+                    stroke="#182A24"
                     strokeWidth="8"
-                    className="text-[#EAE7F4] dark:text-white/[0.08]"
                     fill="transparent"
                   />
                   <circle
                     cx="50"
                     cy="50"
                     r="40"
-                    stroke="#5B47E0"
+                    stroke="#059669"
                     strokeWidth="8"
                     strokeDasharray="251.2"
                     strokeDashoffset={251.2 - (Math.min(100, Math.max(0, avgAtsScore || 0)) / 100) * 251.2}
@@ -697,74 +723,195 @@ export default function Dashboard({
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-xl font-black text-[#1C1739] dark:text-white font-display tabular-nums">
+                  <span className="text-xl sm:text-2xl font-black text-[#F8FAFC] font-display tabular-nums">
                     {avgAtsScore !== null ? `${avgAtsScore}%` : 'N/A'}
                   </span>
-                  <span className="text-[9px] font-bold text-[#736B92] dark:text-slate-400">
-                    Avg Match
+                  <span className="text-[10px] font-bold text-[#94A3A8]">
+                    Avg ATS Score
                   </span>
                 </div>
               </div>
 
-              {/* Real Summary Metrics */}
-              <div className="space-y-2 min-w-0 pl-2">
-                <div className="text-xs">
-                  <span className="text-[#736B92] dark:text-slate-400 text-[11px] block">Formula Applied:</span>
-                  <strong className="text-xs font-bold text-[#1C1739] dark:text-white block mt-0.5">
-                    40% JD + 60% Skills
-                  </strong>
+              {/* Exact Formula Explanation */}
+              <div className="space-y-2.5 min-w-0 text-left w-full sm:w-auto">
+                <div className="p-2.5 rounded-xl bg-[#131F1B]/70 border border-emerald-500/15">
+                  <div className="text-[10px] font-bold text-[#94A3A8] uppercase tracking-wider">
+                    Scoring Breakdown
+                  </div>
+                  <div className="text-xs font-black text-[#F8FAFC] mt-0.5">
+                    40% JD Similarity + 60% Skills
+                  </div>
+                  <div className="text-[10px] text-[#94A3A8] mt-0.5">
+                    TF-IDF cosine distance + required skill matches.
+                  </div>
                 </div>
 
-                <div className="text-xs">
-                  <span className="text-[#736B92] dark:text-slate-400 text-[11px] block">Shortlist Threshold:</span>
-                  <strong className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                    Score &ge; 40.0%
-                  </strong>
+                <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/25">
+                  <div className="text-[10px] font-bold text-[#34D399] uppercase tracking-wider">
+                    Shortlist Benchmark
+                  </div>
+                  <div className="text-xs font-bold text-[#A7F3D0] mt-0.5">
+                    ATS Score &ge; 50.0%
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => setCurrentTab('screening')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#5B47E0] hover:bg-[#4E39D2] text-white text-xs font-bold shadow-sm transition-all"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Screen Batch</span>
-                </button>
               </div>
             </div>
           </div>
 
-          {/* Recent Screening Activity (Deep Contrast Card / Liquid Glass Aesthetic) */}
-          <div className="contrast-card rounded-[26px] p-5 sm:p-6 shadow-xl flex-1 flex flex-col justify-between min-w-0">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#A78BFA]" />
-                  <h4 className="font-bold text-sm tracking-tight text-white font-display">
-                    Recent Screening Activity
-                  </h4>
-                </div>
-                <button
-                  onClick={() => setCurrentTab('shortlist')}
-                  className="text-xs font-bold text-[#A78BFA] hover:text-white transition-colors"
-                >
-                  View shortlist &rarr;
-                </button>
-              </div>
+          <div className="mt-4 pt-3 border-t border-white/[0.08]">
+            <button
+              onClick={() => handleNavigate('screening')}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-700/25 transition-all flex items-center justify-center gap-2 min-h-[38px]"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{isAuthenticated ? 'Screen New Batch' : 'Sign in to Start Screening'}</span>
+            </button>
+          </div>
+        </div>
 
-              {/* Real Screenings List */}
-              <div className="divide-y divide-white/10 mt-2">
-                {recentScreenings.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-white/70">
-                    <p>No screening activity recorded yet.</p>
-                    <p className="text-[11px] text-white/50 mt-1">
+      </div>
+
+      {/* =========================================================================
+          5. LOWER SECTION: UPCOMING INTERVIEWS & RECENT SCREENING ACTIVITY
+          Genuine DB data only - NO fake interview candidates!
+          ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-w-0">
+        
+        {/* Left Column (5 cols on lg): Upcoming Pipeline & Interviews */}
+        <div className="lg:col-span-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-[#34D399]" />
+                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                  Upcoming Interviews
+                </h4>
+              </div>
+              <button
+                onClick={() => handleNavigate('interviews')}
+                className="text-xs font-bold text-[#34D399] hover:underline shrink-0"
+              >
+                View all ({interviews.length}) &rarr;
+              </button>
+            </div>
+
+            {/* Real Interview Events List */}
+            <div className="mt-3 divide-y divide-white/[0.06]">
+              {!isAuthenticated ? (
+                /* Unauthenticated empty state */
+                <div className="py-8 text-center text-xs text-[#94A3A8]">
+                  <Lock className="w-7 h-7 mx-auto text-[#94A3A8]/60 mb-2" />
+                  <p className="font-semibold text-[#F8FAFC]">
+                    Candidate Interviews Protected
+                  </p>
+                  <p className="text-[11px] text-[#94A3A8] mt-1 max-w-xs mx-auto">
+                    Sign in to view scheduled technical rounds, interviewer notes, and candidate pipeline dates.
+                  </p>
+                  <button
+                    onClick={() => openAuthModal('login', '', 'interviews')}
+                    className="mt-3 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-700/25 transition-colors"
+                  >
+                    Sign In to View Schedule
+                  </button>
+                </div>
+              ) : interviews.length === 0 ? (
+                /* Genuine empty state: 0 interviews in database */
+                <div className="py-8 text-center text-xs text-[#94A3A8]">
+                  <CalendarIcon className="w-7 h-7 mx-auto text-[#94A3A8]/50 mb-2" />
+                  <p className="font-semibold text-[#F8FAFC]">
+                    No interviews scheduled yet.
+                  </p>
+                  <p className="text-[11px] text-[#94A3A8] mt-1 max-w-xs mx-auto">
+                    Schedule technical rounds and manager reviews directly from shortlisted candidates.
+                  </p>
+                  {(isRecruiter || isHiringManager || isAdmin) && (
+                    <button
+                      onClick={() => handleNavigate('interviews')}
+                      className="mt-3 px-4 py-1.5 rounded-xl bg-emerald-950/40 text-[#34D399] border border-emerald-500/25 font-bold text-xs hover:bg-[#059669] hover:text-white transition-all"
+                    >
+                      + Schedule Interview
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* Genuine interviews mapped from SQLite database */
+                interviews.slice(0, 3).map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleNavigate('interviews')}
+                    className="py-3 flex items-center justify-between gap-3 group hover:bg-[#131F1B]/60 px-2 rounded-xl transition-colors cursor-pointer min-w-0"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="text-[11px] font-bold text-[#34D399]">
+                        {item.scheduled_at ? new Date(item.scheduled_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Date TBD'} • {item.stage}
+                      </div>
+                      <div className="text-xs font-bold text-[#F8FAFC] mt-0.5 truncate">
+                        {item.candidate_name} ({item.job_title})
+                      </div>
+                      <div className="text-[10px] text-[#94A3A8] mt-0.5 truncate">
+                        Interviewer: {item.interviewer}
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/40 text-[#34D399] border border-emerald-500/20 shrink-0">
+                      {item.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Card Action */}
+          <div className="mt-4 pt-3 border-t border-white/[0.08]">
+            <button
+              onClick={() => handleNavigate('interviews')}
+              className="w-full py-2.5 rounded-xl bg-[#131F1B] hover:bg-[#182A24] text-[#34D399] border border-emerald-500/15 font-bold text-xs text-center transition-colors min-h-[38px] flex items-center justify-center gap-1.5"
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Manage Candidate Pipeline</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right Column (7 cols on lg): Recent Screening Activity */}
+        <div className="lg:col-span-7 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 flex flex-col justify-between text-[#F8FAFC]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-[#34D399]" />
+                <h4 className="font-extrabold text-xs sm:text-sm text-[#F8FAFC] uppercase tracking-wider">
+                  Recent Screening Activity
+                </h4>
+              </div>
+              <button
+                onClick={() => handleNavigate('shortlist')}
+                className="text-xs font-bold text-[#34D399] hover:underline shrink-0"
+              >
+                View Shortlist &rarr;
+              </button>
+            </div>
+
+            {/* List of Real Screenings */}
+            <div className="mt-3 divide-y divide-white/[0.06]">
+              {isAuthenticated ? (
+                /* Authenticated user: View candidate screening details */
+                recentScreenings.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-[#94A3A8]">
+                    <FileSearch className="w-7 h-7 mx-auto text-[#94A3A8]/50 mb-2" />
+                    <p className="font-semibold text-[#F8FAFC]">
+                      No screening activity recorded yet.
+                    </p>
+                    <p className="text-[11px] text-[#94A3A8] mt-1 max-w-xs mx-auto">
                       Upload resumes against job descriptions to begin candidate evaluation.
                     </p>
-                    <button
-                      onClick={() => setCurrentTab('screening')}
-                      className="mt-3 px-4 py-2 rounded-full bg-[#5B47E0] text-white font-bold text-xs hover:bg-[#4E39D2] transition-colors inline-block"
-                    >
-                      Screen First Resume
-                    </button>
+                    {(isRecruiter || isAdmin) && (
+                      <button
+                        onClick={() => handleNavigate('screening')}
+                        className="mt-3 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-700/25 transition-colors"
+                      >
+                        Screen First Resume
+                      </button>
+                    )}
                   </div>
                 ) : (
                   recentScreenings.slice(0, 4).map((record) => (
@@ -772,109 +919,155 @@ export default function Dashboard({
                       key={record.id}
                       onClick={() => {
                         if (setSelectedCandidateId) setSelectedCandidateId(record.candidate_id);
-                        setCurrentTab('result');
+                        handleNavigate('result');
                       }}
-                      className="py-3 flex items-center justify-between gap-3 group hover:bg-white/[0.06] px-2 rounded-xl transition-colors cursor-pointer min-w-0"
+                      className="py-3 flex items-center justify-between gap-3 group hover:bg-[#131F1B]/60 px-2 rounded-xl transition-colors cursor-pointer min-w-0"
                     >
                       <div className="min-w-0 pr-2">
-                        <div className="text-xs font-bold text-white group-hover:text-[#A78BFA] transition-colors truncate">
+                        <div className="text-xs font-bold text-[#F8FAFC] group-hover:text-[#34D399] transition-colors truncate">
                           {record.candidate_name || `Candidate #${record.candidate_id}`}
                         </div>
-                        <div className="text-[11px] text-white/60 truncate mt-0.5">
+                        <div className="text-[10px] text-[#94A3A8] truncate mt-0.5">
                           {record.job_title || 'General Role'} • {record.predicted_category || 'Engineering'}
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-black text-xs text-white tabular-nums px-2 py-0.5 rounded-full bg-white/10">
+                        <span className="font-black text-xs text-[#34D399] tabular-nums px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/25">
                           {Math.round(record.ats_score || 0)}%
                         </span>
-                        <div className="w-6 h-6 rounded-full bg-[#5B47E0] text-white flex items-center justify-center shrink-0">
-                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                        </div>
+                        <RecommendationBadge recommendation={record.recommendation} />
                       </div>
                     </div>
                   ))
-                )}
-              </div>
-            </div>
+                )
+              ) : (
+                /* Unauthenticated visitors: Non-sensitive aggregate evaluations (No candidate PII) */
+                (summaryData?.recent_public_activity && Array.isArray(summaryData.recent_public_activity) && summaryData.recent_public_activity.length > 0) ? (
+                  summaryData.recent_public_activity.slice(0, 4).map((item) => (
+                    <div
+                      key={item?.id || Math.random()}
+                      onClick={() => openAuthModal('login', '', 'rankings')}
+                      className="py-3 flex items-center justify-between gap-3 group hover:bg-[#131F1B]/60 px-2 rounded-xl transition-colors cursor-pointer min-w-0"
+                      title="Sign in to view candidate details"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="text-xs font-bold text-[#F8FAFC] group-hover:text-[#34D399] transition-colors truncate">
+                          Candidate Evaluation #{item?.id}
+                        </div>
+                        <div className="text-[10px] text-[#94A3A8] truncate mt-0.5">
+                          {item?.job_title || 'General Role'} • {item?.category || 'General'}
+                        </div>
+                      </div>
 
-            <button
-              onClick={() => setCurrentTab('screening')}
-              className="mt-4 w-full py-2.5 rounded-2xl bg-white/15 hover:bg-white/20 text-white font-bold text-xs text-center border border-white/20 transition-all flex items-center justify-center gap-2"
-            >
-              <FileSearch className="w-3.5 h-3.5" />
-              <span>Evaluate New Candidates</span>
-            </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-black text-xs text-[#34D399] tabular-nums px-2.5 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/25">
+                          {Math.round(item?.ats_score || 0)}%
+                        </span>
+                        <RecommendationBadge recommendation={item?.recommendation} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-xs text-[#94A3A8]">
+                    <p>No screening activity recorded yet.</p>
+                    <p className="text-[11px] text-[#94A3A8]/70 mt-1">
+                      Sign in to evaluate candidates against active job descriptions.
+                    </p>
+                    <button
+                      onClick={() => openAuthModal('login', '', 'screening')}
+                      className="mt-3 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-700/25 transition-colors"
+                    >
+                      Sign In to Screen
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
           </div>
 
+          {/* Bottom Card Action */}
+          <div className="mt-4 pt-3 border-t border-white/[0.08]">
+            <button
+              onClick={() => handleNavigate('rankings')}
+              className="w-full py-2.5 rounded-xl bg-[#131F1B] hover:bg-[#182A24] text-[#34D399] border border-emerald-500/15 font-bold text-xs text-center transition-colors min-h-[38px] flex items-center justify-center gap-1.5"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Explore Candidate Corpus</span>
+            </button>
+          </div>
         </div>
 
       </div>
 
       {/* =========================================================================
-          3. RECENT JOB OPENINGS (CONNECTED TO REAL DATABASE ENDPOINTS)
+          6. RECENT ACTIVE JOB OPENINGS (CONNECTED TO REAL DATABASE ENDPOINTS)
           Working "Screen Role" & "View All Jobs" links
           ========================================================================= */}
-      <div className="p-5 sm:p-6 rounded-[26px] bg-white dark:bg-[#0E1526]/80 border border-[#EAE7F4] dark:border-white/[0.08] shadow-sm min-w-0">
-        <div className="flex items-center justify-between pb-4 border-b border-[#F0EDF8] dark:border-white/[0.06]">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#0B1210]/90 backdrop-blur-md border border-emerald-500/15 shadow-sm min-w-0 text-[#F8FAFC]">
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-[#5B47E0]" />
-            <h3 className="font-extrabold text-sm sm:text-base text-[#1C1739] dark:text-white font-display">
-              Recent Job Openings
+            <Briefcase className="w-4 h-4 text-[#34D399]" />
+            <h3 className="font-extrabold text-xs sm:text-base text-[#F8FAFC] font-display">
+              Active Job Requisitions
             </h3>
           </div>
           <button
-            onClick={() => setCurrentTab('jobs')}
-            className="text-xs font-bold text-[#5B47E0] dark:text-[#A78BFA] hover:underline flex items-center gap-1"
+            onClick={() => handleNavigate('jobs')}
+            className="text-xs font-bold text-[#34D399] hover:underline flex items-center gap-1 shrink-0"
           >
-            <span>View All ({jobs.length})</span>
+            <span>View All ({activeJobsCount})</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
           {jobs.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-xs text-[#736B92] dark:text-slate-400">
-              <p>No job postings created yet.</p>
+            <div className="col-span-full py-8 text-center text-xs text-[#94A3A8]">
+              <Briefcase className="w-8 h-8 mx-auto text-[#94A3A8]/40 mb-2" />
+              <p className="font-semibold text-[#F8FAFC]">
+                {isAuthenticated ? "No job postings created yet." : "Sign in to view full job requisitions."}
+              </p>
+              <p className="text-[11px] text-[#94A3A8] mt-1 max-w-sm mx-auto">
+                {isAuthenticated
+                  ? "Create a job requisition with custom skills to begin candidate matching."
+                  : "Authenticated recruiters can create, manage, and screen candidates against job descriptions."}
+              </p>
               <button
-                onClick={() => setCurrentTab('jobs')}
-                className="mt-2 text-[#5B47E0] font-bold hover:underline"
+                onClick={() => handleNavigate('jobs')}
+                className="mt-3 px-4 py-2 rounded-xl bg-[#059669] hover:bg-[#047857] text-white font-bold text-xs shadow-md shadow-emerald-700/25 transition-colors"
               >
-                + Create a new job description
+                {isAuthenticated ? "+ Create Job Description" : "Sign In to Access Jobs"}
               </button>
             </div>
           ) : (
             jobs.slice(0, 3).map((job) => (
               <div
                 key={job.id}
-                className="p-4 rounded-2xl bg-[#F8F7FD] dark:bg-white/[0.03] border border-[#EAE7F4] dark:border-white/[0.06] hover:border-[#5B47E0]/40 transition-all flex flex-col justify-between group min-w-0"
+                className="p-4 rounded-2xl bg-[#131F1B]/70 border border-emerald-500/15 hover:border-[#34D399]/40 transition-all flex flex-col justify-between group min-w-0"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-xs font-bold text-[#1C1739] dark:text-white group-hover:text-[#5B47E0] transition-colors truncate">
+                    <h4 className="text-xs font-bold text-[#F8FAFC] group-hover:text-[#34D399] transition-colors truncate">
                       {job.title}
                     </h4>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/40 text-[#34D399] border border-emerald-500/20 shrink-0">
                       {job.status || 'Active'}
                     </span>
                   </div>
 
-                  <div className="text-[11px] text-[#736B92] dark:text-slate-400 mt-1 truncate">
+                  <div className="text-[11px] text-[#94A3A8] mt-1 truncate">
                     {job.department || 'Engineering'} • {job.required_skills?.length || 0} Required Skills
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#EAE7F4] dark:border-white/[0.06] flex items-center justify-between">
-                  <span className="text-[10px] text-[#736B92] dark:text-slate-400">
+                <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <span className="text-[10px] text-[#94A3A8]">
                     ID: #{job.id}
                   </span>
                   <button
-                    onClick={() => {
-                      if (setSelectedJobForScreening) setSelectedJobForScreening(job);
-                      setCurrentTab('screening');
-                    }}
-                    className="px-3 py-1 rounded-full bg-[#5B47E0] hover:bg-[#4E39D2] text-white text-[11px] font-bold transition-all shadow-xs"
+                    onClick={() => handleNavigate('screening', job)}
+                    className="px-3 py-1.5 rounded-full bg-[#059669] hover:bg-[#047857] text-white text-[11px] font-bold transition-all shadow-xs"
                   >
                     Screen Role
                   </button>

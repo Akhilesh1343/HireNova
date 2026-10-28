@@ -289,8 +289,8 @@ export default function JobManagement({ setCurrentTab, setSelectedJobForScreenin
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs min-w-[680px]">
               <thead className="bg-slate-50/75 dark:bg-[#121A2F] border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="py-3 px-4 font-medium">Job Title</th>
@@ -410,9 +410,9 @@ export default function JobManagement({ setCurrentTab, setSelectedJobForScreenin
 
       {/* CREATE / EDIT JOB OPENING MODAL WITH 10 JOB TEMPLATES (Requirement 6) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-backdrop">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-backdrop">
           <div 
-            className="w-full max-w-2xl bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto animate-modal"
+            className="w-full max-w-2xl bg-white dark:bg-[#0E1424] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 relative max-h-[92vh] overflow-y-auto animate-modal"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}

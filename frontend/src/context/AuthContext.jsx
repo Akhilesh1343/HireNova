@@ -30,30 +30,41 @@ export function AuthProvider({ children }) {
   const [prefilledEmail, setPrefilledEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check URL pathname or query parameters on load to support direct deep-linking
+  // Check URL pathname, hash or query parameters on load to support direct deep-linking
   useEffect(() => {
-    try {
-      const path = window.location.pathname.toLowerCase();
-      const params = new URLSearchParams(window.location.search);
-      const tokenParam = params.get('token');
+    const handleUrlAuth = () => {
+      try {
+        const path = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase().replace('#', '').trim();
+        const params = new URLSearchParams(window.location.search);
+        const tokenParam = params.get('token');
 
-      if (path === '/forgot-password' || params.get('mode') === 'forgot-password') {
-        setAuthView('forgot-password');
-        setIsAuthModalOpen(true);
-      } else if (path === '/reset-password' || params.get('mode') === 'reset-password' || tokenParam) {
-        if (tokenParam) setResetToken(tokenParam);
-        setAuthView('reset-password');
-        setIsAuthModalOpen(true);
-      } else if (path === '/register' || params.get('mode') === 'register') {
-        setAuthView('register');
-        setIsAuthModalOpen(true);
-      } else if (path === '/login' || params.get('mode') === 'login') {
-        setAuthView('login');
-        setIsAuthModalOpen(true);
+        if (path === '/forgot-password' || params.get('mode') === 'forgot-password' || hash === 'forgot-password') {
+          setAuthView('forgot-password');
+          setIsAuthModalOpen(true);
+        } else if (path === '/reset-password' || params.get('mode') === 'reset-password' || hash === 'reset-password' || tokenParam) {
+          if (tokenParam) setResetToken(tokenParam);
+          setAuthView('reset-password');
+          setIsAuthModalOpen(true);
+        } else if (path === '/register' || path === '/signup' || params.get('mode') === 'register' || params.get('mode') === 'signup' || hash === 'register' || hash === 'signup') {
+          setAuthView('register');
+          setIsAuthModalOpen(true);
+        } else if (path === '/login' || path === '/signin' || params.get('mode') === 'login' || params.get('mode') === 'signin' || hash === 'login' || hash === 'signin') {
+          setAuthView('login');
+          setIsAuthModalOpen(true);
+        }
+      } catch {
+        // Ignore URL parsing errors
       }
-    } catch {
-      // Ignore URL parsing errors
-    }
+    };
+
+    handleUrlAuth();
+    window.addEventListener('hashchange', handleUrlAuth);
+    window.addEventListener('popstate', handleUrlAuth);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlAuth);
+      window.removeEventListener('popstate', handleUrlAuth);
+    };
   }, []);
 
   // Validate existing token on mount
@@ -119,9 +130,12 @@ export function AuthProvider({ children }) {
     });
   };
 
-  const openAuthModal = (view = 'login', email = '') => {
+  const [pendingTab, setPendingTab] = useState(null);
+
+  const openAuthModal = (view = 'login', email = '', requestedTab = null) => {
     setAuthView(view);
     if (email) setPrefilledEmail(email);
+    if (requestedTab) setPendingTab(requestedTab);
     setIsAuthModalOpen(true);
   };
 
@@ -135,6 +149,8 @@ export function AuthProvider({ children }) {
         user,
         isAuthenticated: !!user,
         isLoading,
+        pendingTab,
+        setPendingTab,
         login,
         register,
         forgotPassword,
@@ -155,6 +171,7 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
+
 }
 
 export function useAuth() {
